@@ -1,10 +1,33 @@
 import axios from "axios";
+import { useUser } from "../context/AuthContext";
+import { saveToLocalStorage } from "./localStorage";
 
-export const instance = axios.create({
-  baseURL: "YOUR_API_BASE_URL",
-  withCredentials: true, // Send cookies with requests
-});
+const useAxios = () => {
+  const { user, setUser } = useUser();
 
-const useAxios = () => {};
+  const axiosInstance = axios.create({
+    baseURL: "http://localhost:8080",
+    headers: { Authorization: `Bearer ${user?.accessToken}` },
+  });
+
+  axiosInstance.interceptors.request.use(async (req) => {
+    const isExpire = false;
+
+    if (!isExpire) return req;
+
+    const { data } = await axios("http://localhost:8080/refresh-token", {
+      withCredentials: true,
+    });
+
+    saveToLocalStorage(data);
+    setUser(data);
+
+    req.headers.Authorization = `Bearer ${data.accessToken}`;
+
+    return req;
+  });
+
+  return axiosInstance;
+};
 
 export default useAxios;
