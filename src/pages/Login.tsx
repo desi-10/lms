@@ -5,7 +5,7 @@ const Login = () => {
         <h2 className="hidden text-2xl lg:block my-4 text-center font-bold text-black">
           Learning Management System
         </h2>
-        <section className=" mx-auto grid grid-cols-1 lg:grid-cols-2 md:w-[500px] lg:w-[1000px] justify-center items-center">
+        <section className="sm:w-full mx-auto grid grid-cols-1 lg:grid-cols-2 md:w-[500px] lg:w-[1000px] justify-center items-center">
           <div className="w-full md:w-[300px] lg:w-full block mx-auto">
             <img src="/assets/blogging-clipart.svg" alt="" />
           </div>
