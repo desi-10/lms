@@ -1,5 +1,5 @@
 const Home = () => {
-  return <div>Home</div>;
+  return <section className="p-5 mx-auto">Home</section>;
 };
 
 export default Home;

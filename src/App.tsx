@@ -1,9 +1,15 @@
 import { Routes, Route } from "react-router-dom";
+
 import RootLayout from "./layouts/RootLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import RestrictedRoute from "./layouts/RestrictedRoute";
 import ProtectedRoute from "./layouts/ProtectedRoute";
+import SharedLayout from "./layouts/SharedLayout";
+import Video from "./pages/Video";
+import Notes from "./pages/Notes";
+import Chat from "./pages/Chat";
+
 function App() {
   return (
     <>
@@ -13,7 +19,12 @@ function App() {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<RootLayout />}>
-            <Route index element={<Home />} />
+            <Route element={<SharedLayout />}>
+              <Route index element={<Home />} />
+              <Route path="video" element={<Video />} />
+              <Route path="notes" element={<Notes />} />
+              <Route path="chat" element={<Chat />} />
+            </Route>
           </Route>
         </Route>
       </Routes>
