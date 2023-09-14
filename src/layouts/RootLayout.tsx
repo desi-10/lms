@@ -5,7 +5,7 @@ const RootLayout = () => {
   return (
     <>
       <section className="flex bg-slate-50 text-slate-500 ">
-        <div className="w-[20%] h-screen bg-white">
+        <div className="hidden lg:block w-[20%] h-screen bg-white">
           <Sidebar />
         </div>
         <div className="w-full">
