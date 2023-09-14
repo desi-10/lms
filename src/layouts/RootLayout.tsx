@@ -1,14 +1,17 @@
 import { Outlet } from "react-router-dom";
-
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Sidebar from "../components/Sidebar";
 
 const RootLayout = () => {
   return (
     <>
-      <Navbar />
-      <Outlet />
-      <Footer />
+      <section className="flex bg-slate-50 text-slate-500 ">
+        <div className="w-[20%] h-screen bg-white">
+          <Sidebar />
+        </div>
+        <div className="w-full">
+          <Outlet />
+        </div>
+      </section>
     </>
   );
 };

@@ -5,9 +5,9 @@ const Login = () => {
         <h2 className="hidden text-2xl lg:block my-4 text-center font-bold text-black">
           Learning Management System
         </h2>
-        <section className="w-[90%] mx-auto grid grid-cols-1 lg:grid-cols-2 md:w-[500px] lg:w-[1000px] justify-center items-center ">
-          <div className="w-[280px] lg:w-full  mx-auto">
-            <img src="public/assets/blogging-clipart.svg" alt="" />
+        <section className=" mx-auto grid grid-cols-1 lg:grid-cols-2 md:w-[500px] lg:w-[1000px] justify-center items-center">
+          <div className="w-full md:w-[300px] lg:w-full block mx-auto">
+            <img src="/assets/blogging-clipart.svg" alt="" />
           </div>
 
           <form action="" className="space-y-2 lg:space-y-5 lg:px-10">
