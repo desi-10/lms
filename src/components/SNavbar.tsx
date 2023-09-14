@@ -1,5 +1,3 @@
-import React from "react";
-
 const SNavbar = () => {
   return (
     <nav className="border-b">
