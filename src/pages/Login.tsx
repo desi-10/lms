@@ -1,7 +1,7 @@
 const Login = () => {
   return (
     <main className="h-screen flex justify-center items-center bg-slate-50 text-slate-500">
-      <div className="w-[90%] mx-auto  md:w-[500px] lg:w-[1000px] py-10">
+      <div className="w-[90%] mx-auto  md:w-[500px] lg:w-[1000px]">
         <h2 className="hidden text-2xl lg:block my-4 text-center font-bold text-black">
           Learning Management System
         </h2>
@@ -10,7 +10,7 @@ const Login = () => {
             <img src="/assets/blogging-clipart.svg" alt="" />
           </div>
 
-          <form action="" className="space-y-2 lg:space-y-5 lg:px-10">
+          <form action="" className="space-y-3 lg:space-y-5 lg:px-10">
             <h2 className="lg:hidden my-4 lg:mb-2 text-center font-bold text-black">
               Learning Management System
             </h2>
