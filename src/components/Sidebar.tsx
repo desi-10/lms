@@ -18,7 +18,7 @@ const Sidebar = () => {
                 <i>
                   <CiGrid41 className="text-xl" />
                 </i>
-                <p>Overview</p>
+                <p>Courses</p>
               </Link>
             </div>
             <div>
@@ -57,7 +57,7 @@ const Sidebar = () => {
           </section>
         </div>
 
-        <button className="p-2 rounded-lg text-blue-700 border border-blue-700">
+        <button className="p-2 rounded-lg text-blue-700 border border-blue-700 hover:bg-blue-700 hover:text-white transition-all duration-300">
           Need help?
         </button>
       </section>

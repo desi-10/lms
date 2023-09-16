@@ -9,6 +9,8 @@ import SharedLayout from "./layouts/SharedLayout";
 import Video from "./pages/Video";
 import Notes from "./pages/Notes";
 import Chat from "./pages/Chat";
+import CoursePage from "./pages/CoursePage";
+import CourseDetails from "./pages/CourseDetails";
 
 function App() {
   return (
@@ -24,6 +26,11 @@ function App() {
               <Route path="video" element={<Video />} />
               <Route path="notes" element={<Notes />} />
               <Route path="chat" element={<Chat />} />
+              <Route path="coursepage" element={<CoursePage />} />
+              <Route
+                path="coursepage/coursedetails"
+                element={<CourseDetails />}
+              />
             </Route>
           </Route>
         </Route>
