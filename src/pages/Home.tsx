@@ -7,7 +7,7 @@ const Home = () => {
         <Link to="coursepage">
           <div className="">
             <img
-              src="/public/assets/blogging-clipart.svg"
+              src="/assets/blogging-clipart.svg"
               className="group-hover:scale-105 transition-all duration-300"
               alt=""
             />

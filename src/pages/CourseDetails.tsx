@@ -24,11 +24,7 @@ const CourseDetails = () => {
         </div>
       </div>
       <div>
-        <video
-          src="/assets/Justin Bieber - Loved By You (Visualizer) ft. Burna Boy.mp4"
-          className="w-[700px] px-5 mb-5"
-          controls
-        ></video>
+        <video src="" className="w-[700px] px-5 mb-5" controls></video>
       </div>
 
       <div className="px-5 mb-5">
