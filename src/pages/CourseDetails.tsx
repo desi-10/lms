@@ -3,7 +3,7 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 const CourseDetails = () => {
   return (
     <section className="">
-      <div className="sticky top-0 left-0 bg-slate-50 p-5 flex justify-between items-center mb-5">
+      <div className="sticky top-0 left-0 z-10 bg-slate-50 p-5 flex justify-between items-center mb-5">
         <div className="flex items-center space-x-5">
           <div className="flex items-center">
             <i className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300">

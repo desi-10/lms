@@ -31,7 +31,7 @@ const Navbar = () => {
           </i>
           <div className="w-10 h-10 rounded-full flex justify-center items-center border group cursor-pointer">
             <img
-              src="/public/assets/blogging-clipart.svg"
+              src="/assets/blogging-clipart.svg"
               alt="user"
               className="w-full h-full group-hover:scale-105 transition-all duration-300"
             />
