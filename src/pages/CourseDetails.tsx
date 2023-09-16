@@ -41,7 +41,10 @@ const CourseDetails = () => {
           sit amet consectetur adipisicing elit. Amet ea perspiciatis laborum
           possimus eum quas et temporibus aperiam ipsa consequatur,
           exercitationem reiciendis quo quis. Laudantium omnis recusandae
-          voluptatum inventore quam?
+          voluptatum inventore quam? Lorem ipsum dolor sit amet consectetur
+          adipisicing elit. Nemo aliquid dicta eaque harum consequuntur dolorum
+          officiis numquam placeat? Dolorum molestiae eos repudiandae? Ratione
+          blanditiis aut maxime molestias magni? Incidunt, aliquid.
         </p>
       </div>
     </section>
