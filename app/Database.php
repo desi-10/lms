@@ -11,6 +11,9 @@
         private string $status;
         private string $status1;
 
+        private array $logs = [];
+        private array $trace = [];
+
         public function __construct(
             private string $host = "localhost", private string $username  = "root",  
             private string $password = "", private string $database = "elms"
@@ -24,14 +27,24 @@
 
             if($this->connect_errno){
                 $this->status = "Mysqli Connection Error: ".$this->connect_errno;
+                $this->addLog($this->status);
                 throw new RuntimeException("Mysqli Connection Error: ".$this->connect_errno);
             }else{
                 $this->setStatus("success");
+                $this->addLog("Database connection was successful");
             }
         }
 
         public function status(){
-            return $this->status ?? $this->status1;
+            return $this->status;
+        }
+
+        private function addLog(string $message){
+            $this->logs[] = date("Y-m-d H:i:s") .": ". $message;
+        }
+
+        public function getLogs() :array{
+            return $this->logs;
         }
 
         public function clearStatus(){
@@ -46,25 +59,33 @@
          * @param array|string $where Array or string of condition(s) to use
          * @param array|string $where_binds Array or strings for binding where conditions
          * @param int $limit This is the limit of results to be shown
+         * @param null|string $no_results This holds the error message to show when no result is returned
          * 
          * @return array|string|bool an array of data or a single data or error message
          */
         public function fetch(array|string $columns, array|string $table_name, 
-            array|string $where = "", string|array $where_binds = ""){
+            array|string $where = "", string|array $where_binds = "", string|null $no_results = null){
             $response = false;
 
             try{
                 $columns = $this->stringifyColumn($columns);
-                $where = $this->stringifyWhere($where, $where_binds);
                 $table_name = $this->stringifyTable($table_name);
+                $where = $this->stringifyWhere($where, $where_binds);
 
-                $sql = "$columns $table_name $where";
-
-                $response = $sql;
+                $sql = "SELECT $columns FROM $table_name WHERE $where";
+                $data = $this->query($sql);
+                
+                if($data->num_rows > 0){
+                    $response = true;
+                }elseif($data->num_rows == 0){
+                    $response = $no_results ?? "No results matched the query";
+                    $this->setStatus($response, true);
+                }else{
+                    $response = false;
+                }
             }catch(Throwable $th){
                 $response = false;
-                $this->status = "Error: ".$th->getMessage();
-                $this->status = "Error: ".$th->getTraceAsString();
+                $this->setStatus($th->getMessage(), true);
             }
 
             return $response;
@@ -152,8 +173,12 @@
             return $new_tables;
         }
 
-        private function setStatus(string $message){
+        private function setStatus(string $message, bool $log = false){
             $this->status = $message;
+
+            if($log){
+                $this->addLog($message);
+            }
         }
 
         private function tableArraySplit(array $table) :array{
@@ -185,6 +210,80 @@
             $rhs = empty($alias2) ? $table2 : $alias2;
 
             $new_table .= " $lhs ON $rhs";
+        }
+
+        /**
+         * This function is used to insert a new rows into a table
+         * @param string $table_name This is the table name
+         * @param array $data This is the data to be inserted [NB: It should be an associative array]
+         * @return bool returns true or false if something
+         */
+        public function insert(string $table_name, array $data) :bool|string{
+            $response = false;
+
+            try {
+                if(!is_array($data)){
+                    $this->setStatus("Data provided is not an array", true);
+                    return false;
+                }
+
+                if($this->verifyTable($table_name)){
+                    $columns = array_keys($data);
+                    $values = array_values($data);
+                    $placeholders = $this->createPlaceholder(count($columns));
+        
+                    $sql = "INSERT INTO $table_name (".implode(", ", $columns).") VALUES ($placeholders)";
+                    
+                    if($response = $this->parse($sql, $values)){
+                        $this->setStatus("Data was added to '$table_name' table", true);
+                    }else{
+                        $this->setStatus("Data could not be added to table '$table_name'", true);
+                    }
+                }else{
+                    $this->setStatus("Table not found", true);
+                }
+            } catch (Throwable $th) {
+                $this->setStatus($th->getTraceAsString());
+                $this->addLog($th->getMessage());
+            }
+
+            return $response;
+        }
+
+        /**
+         * This function is used to parse prepared statememts
+         * Effective for INSERT, UPDATE and DELETE statements
+         * @param string $prepared_statement This is the prepared statement
+         * @param array $values This is the list of values to be inserted
+         * @return bool Returns true if successful, or false if failure
+         */
+        private function parse(string $prepared_statement, array $values) :bool{
+            $response = false;
+            $stmt = $this->prepare($prepared_statement);
+                    
+            if($stmt->execute($values) !== false){
+                $response = true;
+            }
+
+            return $response;
+        }
+
+        private function verifyTable($table_name) :bool{
+            return boolval($this->query("SHOW TABLES LIKE '$table_name'")->num_rows);
+        }
+
+        public function placeHolders(int $columns){
+            return $this->createPlaceholder($columns);
+        }
+
+        private function createPlaceholder(int $column_count): string{
+            $placeholder = [];
+
+            while($column_count-- > 0){
+                $placeholder[] = "?";
+            }
+
+            return implode(", ", $placeholder);
         }
 
         public function __destruct(){
