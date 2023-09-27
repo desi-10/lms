@@ -64,7 +64,9 @@
          * @return array|string|bool an array of data or a single data or error message
          */
         public function fetch(array|string $columns, array|string $table_name, 
-            array|string $where = "", string|array $where_binds = "", string|null $no_results = null){
+            array|string $where = "", string|array $where_binds = "", 
+            string|null $no_results = null
+        ) :array|string|bool{
             $response = false;
 
             try{
@@ -77,6 +79,7 @@
                 
                 if($data->num_rows > 0){
                     $response = true;
+                    $this->setStatus("{$data->num_rows} results returned from fetch",true);
                 }elseif($data->num_rows == 0){
                     $response = $no_results ?? "No results matched the query";
                     $this->setStatus($response, true);
@@ -173,7 +176,7 @@
             return $new_tables;
         }
 
-        private function setStatus(string $message, bool $log = false){
+        public function setStatus(string $message, bool $log = false){
             $this->status = $message;
 
             if($log){
