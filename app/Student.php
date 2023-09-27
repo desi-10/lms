@@ -25,7 +25,8 @@
                 "index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
             
             if($found_index === true){
-                $response = true;
+                //verify user password
+                $password_match = self::$connect->fetch("password");
             }elseif($found_index !== false){
                 $response = $found_index;
             }else{
@@ -37,6 +38,27 @@
         
         public function create(array $details) :bool|string{
             $response = true;
+
+            //grab index number
+            $index_number = $details["index_number"] ?? $this->createIndexNumber();
+
+            //remove index number from 
+            if(isset($details["index_number"])){
+                unset($details["index_number"]);
+            }
+
+            //parse user info to users table
+            $response = parent::create($details);
+
+            //parse user into students table
+            if($response === true){
+                $student_data = [
+                    "user_id" => $this->user_id,
+                    "index_number" => $index_number
+                ];
+
+                $response = self::$connect->insert("students", $student_data);
+            }
 
             return $response;
         }
