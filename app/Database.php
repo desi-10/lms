@@ -23,7 +23,7 @@
             $this->password = $password; 
             $this->database = $database;
 
-            parent::__construct($this->$host, $this->$username, $this->password, $this->database);
+            $this->connect($host, $username, $password, $database);
 
             if($this->connect_errno){
                 $this->status = "Mysqli Connection Error: ".$this->connect_errno;
@@ -39,10 +39,17 @@
             return $this->status;
         }
 
+        /**
+         * This function is used to log a message into the logs array
+         * @param string $message the message to log
+         */
         private function addLog(string $message){
             $this->logs[] = date("Y-m-d H:i:s") .": ". $message;
         }
 
+        /**
+         * Retrieve all saved logs
+         */
         public function getLogs() :array{
             return $this->logs;
         }
@@ -78,7 +85,7 @@
                 $data = $this->query($sql);
                 
                 if($data->num_rows > 0){
-                    $response = true;
+                    $response = $data->fetch_all(1);
                     $this->setStatus("{$data->num_rows} results returned from fetch",true);
                 }elseif($data->num_rows == 0){
                     $response = $no_results ?? "No results matched the query";
@@ -88,7 +95,8 @@
                 }
             }catch(Throwable $th){
                 $response = false;
-                $this->setStatus($th->getMessage(), true);
+                $this->setStatus($th->getMessage());
+                $this->addLog($th->getTraceAsString());
             }
 
             return $response;
@@ -153,7 +161,7 @@
             $new_tables = "";
 
             if(is_array($tables)){
-                if(!is_array($tables[0])){
+                if(is_array($tables[0])){
                     // at this point, tables should have the following keys
                     // "join" => "table1 table2", "alias" => "tb1 tb2" and "on" => "id1 id2"
                     foreach($tables as $table){
@@ -212,7 +220,7 @@
             $lhs = empty($alias1) ? $table1 : $alias1;
             $rhs = empty($alias2) ? $table2 : $alias2;
 
-            $new_table .= " $lhs ON $rhs";
+            $new_table .= " ON $lhs.$ref1 = $rhs.$ref2";
         }
 
         /**

@@ -21,15 +21,25 @@
             list("index_number" => $index_number, "password" => $password) = $_POST;
 
             //search the index number
-            $found_index = self::$connect->fetch("user_id","students",
-                "index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
+            $tables = [
+                [
+                    "join" => "users students", 
+                    "alias" => "u s", 
+                    "on" => "id user_id"
+                ]
+            ];
+            $found_index = self::$connect->fetch("u.username",$tables,
+                "s.index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
             
-            if($found_index === true){
-                //verify user password
-                $password_match = self::$connect->fetch("password");
+            if(is_array($found_index)){
+                //pass username to parent to login
+                $_POST["username"] = $found_index[0]["username"];
+                $response = parent::login();
             }elseif($found_index !== false){
+                //provide error response string
                 $response = $found_index;
             }else{
+                //false response returned as a result of an error
                 $response = false;
             }
 
