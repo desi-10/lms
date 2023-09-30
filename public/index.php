@@ -2,25 +2,32 @@
     require_once "../autoloader.php";
 
     use App\Student;
-    use App\Database;
 
-    // $_POST["index_number"] = "0123456789";
-    $_POST["index_number"] = "0323080224";
-    $_POST["password"] = "Password@1";
+    //response variables
+    $message = null; $error = true;
 
-    // if(isset($_POST["submit"])){
-        $student = new Student;
-        $db = new Database;
-        $users = [
-            "username" => "MatrixMe",
-            "lname" => "Afosah",
-            "oname" => "Seth Boye",
-            "user_role" => 3
-        ];
-    // }
-    
-    echo "<pre>";
-    // var_dump($student->find(1));
-    var_dump($student->login(), $student->logs());
-    // var_dump($student->create($users), $student->logs());
-    echo "</pre>";
+    if(isset($_POST["submit"])){
+        $submit = $_POST["submit"];
+
+        if($submit == "student_login"){
+            $student = new Student;
+
+            //create a session variable if student is logged in
+            $message = $student->login();
+
+            if($message === true){
+                $error = false;
+            }
+        }
+    }else{
+        $message = "No submission was detected";
+    }
+
+    //grab the response messages
+    $response = [
+        "error" => $error, "message" => $message
+    ];
+
+    //send a json encoded response
+    // header("Content-Type: appliction/json");
+    echo json_encode($response);
