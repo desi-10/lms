@@ -12,7 +12,8 @@
             "lname", "oname", "username", "user_role"
         ];
 
-        private bool $isLoggedIn;
+        /** @var bool $loggedIn takes the status of the user's login  */
+        public bool $loggedIn;
         
         public function __construct(
             protected int $user_id = 0, protected string $lname = "", protected string $oname = "",
@@ -25,13 +26,11 @@
             $this->user_role = $user_role;
 
             self::$connect = new Database;
-            $this->isLoggedIn = false;
+            $this->loggedIn = false;
         }
 
-
-
         public function login() :int|string|bool{
-            $response = false;
+            $this->loggedIn = $response = false;
 
             //grab components
             list("username" => $username, "password" => $password) = $_POST;
@@ -44,7 +43,8 @@
                     $response = "Password does not match the username";
                     self::$connect->setStatus($response, true);
                 }else{
-                    self::$connect->setStatus("'$username' has is signed in", true);
+                    self::$connect->setStatus("'$username' is signed in", true);
+                    $this->loggedIn = true;
                 }
             }else{
                 $response = "Username '$username' not found. Please check and try again";
