@@ -262,6 +262,32 @@
         }
 
         /**
+         * This function is used to delete from a specific table
+         * @param string $table The name of the table from which data should be deleted
+         * @param string|string[] $condition The condition to be used 
+         * @param string|string[] $conditon_binds This is the set of binds to be used for the condition
+         */
+        public function delete(string $table, string|array $condition, string|array $condition_binds = "") :bool{
+            $response = false;
+
+            try {
+                $condition = $this->stringifyWhere($condition, $condition_binds);
+
+                $sql = "DELETE FROM $table WHERE $condition";
+
+                if($this->query($sql)){
+                    $response = true;
+                    $this->setStatus("Data deleted from '$table'", true);
+                }
+            } catch (Throwable $th) {
+                $this->setStatus($th->getMessage());
+                $this->addLog($th->getTraceAsString());
+            }
+            
+            return $response;
+        }
+
+        /**
          * This function is used to parse prepared statememts
          * Effective for INSERT, UPDATE and DELETE statements
          * @param string $prepared_statement This is the prepared statement
