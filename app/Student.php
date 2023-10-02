@@ -9,8 +9,17 @@
         
         public function __construct(Database $database, 
             int $user_id = 0, string $lname = '', 
-            string $oname = '', string $username = '', int $user_role = 3){
+            string $oname = '', string $username = '', int $user_role = 3,
+            string $index_number = ''){
                 parent::__construct($database, $user_id, $lname, $oname, $username, $user_role);
+                $this->table = [
+                    [
+                        "join" => "users students", 
+                        "alias" => "u s", 
+                        "on" => "id user_id"
+                    ]
+                ];
+                $this->setIndexNumber($index_number);
         }
 
         public function getIndexNumber() :string{
@@ -27,13 +36,7 @@
                 list("index_number" => $index_number, "password" => $password) = $_POST;
 
                 //search the index number
-                $tables = [
-                    [
-                        "join" => "users students", 
-                        "alias" => "u s", 
-                        "on" => "id user_id"
-                    ]
-                ];
+                $tables = $this->table;
                 $found_index = $this->connect->fetch("u.username",$tables,
                     "s.index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
                 
@@ -51,6 +54,35 @@
             } catch (\Throwable $th) {
                 $response = $th->getMessage();
             }
+
+            return $response;
+        }
+
+        public function data() :string|array{
+            $response = parent::data();
+
+            //add index number to response data
+            if(is_array($response)){
+                $response["index_number"] = $this->index_number;
+            }
+
+            return $response;
+        }
+
+        public static function find(int|string $user_id, $table = []) :static|false{
+            $table = [
+                "columns" => "u.*, s.index_number",
+                "tables" => [
+                    [
+                        "join" => "users students", 
+                        "alias" => "u s", 
+                        "on" => "id user_id"
+                    ]
+                ],
+                "where" => "u.id=$user_id OR s.index_number='$user_id'"
+            ];
+
+            $response = parent::find($user_id, $table);
 
             return $response;
         }

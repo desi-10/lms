@@ -1,9 +1,12 @@
 <?php 
     declare(strict_types=1);
     namespace App;
+    use App\Traits\Table;
 
     class User
-    {        
+    {
+        use Table;
+        
         /** @var Database $connect This is a static database connection */
         protected Database $connect;
 
@@ -13,7 +16,7 @@
         ];
 
         /** @var bool $loggedIn takes the status of the user's login  */
-        public bool $loggedIn;
+        public static bool $loggedIn;
         
         public function __construct(
             Database $database,
@@ -27,11 +30,27 @@
             $this->user_role = $user_role;
 
             $this->connect = $database;
-            $this->loggedIn = false;
+            self::$loggedIn = false;
+        }
+
+        public function data() :array|string{
+            $response = "Detail not found";
+
+            if($this->user_id > 0){
+                $response = [
+                    "user_id" => $this->user_id,
+                    "user_role" => $this->user_role,
+                    "username" => $this->username,
+                    "lname" => $this->lname,
+                    "oname" => $this->oname
+                ];
+            }
+
+            return $response;
         }
 
         public function login() :int|string|bool{
-            $this->loggedIn = $response = false;
+            self::$loggedIn = $response = false;
 
             //grab components
             list("username" => $username, "password" => $password) = $_POST;
@@ -45,7 +64,7 @@
                     $this->connect->setStatus($response, true);
                 }else{
                     $this->connect->setStatus("'$username' is signed in", true);
-                    $this->loggedIn = true;
+                    self::$loggedIn = true;
                 }
             }else{
                 $response = "Username '$username' not found. Please check and try again";
@@ -61,21 +80,26 @@
                 $details["user_role"] = $this->setDefault($details, "user_role", $this->user_role);
             }
 
-            $response = $this->checkInsert($details);
-            
-            if($response){
-                $response = $this->connect->insert("users", $details);
+            //check if the necessary fields are present            
+            if($this->checkInsert($details)){
+                if(($response = $this->validate($details, "insert")) === true){
+                    $response = $this->connect->insert("users", $details);
 
-                //create login info
-                if($response === true){
-                    $password = $this->setDefault($details, "password", "Password@1");
-                    $new_det["password"] = password_hash($password, PASSWORD_DEFAULT);
-                    $new_det["username"] = $details["username"];
-                    $new_det["user_id"] = $this->user_id = $this->connect->insert_id;
+                    //create login info
+                    if($response === true){
+                        $password = $this->setDefault($details, "password", "Password@1");
+                        $new_det["password"] = password_hash($password, PASSWORD_DEFAULT);
+                        $new_det["username"] = $details["username"];
+                        $new_det["user_id"] = $this->user_id = $this->connect->insert_id;
 
-                    $response = $this->connect->insert("userlogin", $new_det);
+                        $response = $this->connect->insert("userlogin", $new_det);
+                    }
+                }else{
+                    http_response_code(422);
+                    $this->connect->setStatus((string) $response, true);
                 }
             }else{
+                http_response_code(422);
                 $response = $this->connect->status();
             }
 
@@ -118,14 +142,22 @@
             return $this->connect->getLogs();
         }
 
-        public static function find(int $user_id, string|array $columns = "", User $instance = new self) :self|bool{
-            $columns = empty($columns) ? "*" : $columns;
-            $search = $instance->connect->fetch("*","users","id=$user_id");
+        public static function find(string|int $user_id, $table = []) :static|false{
+            $instance = new static(new Database);
+            
+            if(!empty($table)){
+                list("columns"=>$columns, "tables"=>$tables, "where"=>$where) = $table;
+            }
+            else{
+                $columns = "*"; $tables = "users"; $where = "id=$user_id";
+            }
+            
+            $search = $instance->connect->fetch($columns,$tables,$where);
 
             if(is_array($search)){
                 //create a new instance of the user
                 $search = $instance->convertToConstruct($search);
-                $user = new self(...array_values($search));
+                $user = new static($instance->connect, ...array_values($search));
             }else{
                 $search = $search !== false ? $search : "User was not found";
                 $instance->connect->setStatus($search, true);
@@ -168,11 +200,28 @@
             return $response;
         }
 
-        protected function setDefault(array $array, string|int $key, $default_value){
-            return empty($array[$key]) || is_null($array[$key]) ? $default_value : $array[$key];
-        }
+        private function validate(array $data, string $mode) :string|bool{
+            $response = true;
 
-        private function validate(array $data, string $mode){
+            //general checks
+            if(empty($data["lname"]) || is_null($data["lname"])){
+                $response = "No last name was provided";
+            }elseif(empty($data["oname"]) || is_null($data["oname"])){
+                $response = "No other name(s) provided";
+            }elseif(empty($data["username"]) || is_null($data["username"])){
+                $response = "No username was provided";
+            }elseif(empty($data["user_role"]) || is_null($data["user_role"])){
+                $response = "User role was not specified";
+            }elseif(ctype_digit($data["user_role"]) === false || $data["user_role"] < 1){
+                $response = "User role provided is invalid";
+            }
+            
+            if(strtolower($mode) == "update"){
+                if(empty($data["password"]) || is_null($data["password"])){
+                    $response = "Password was not specified";
+                }
+            }
 
+            return $response;
         }
     }
