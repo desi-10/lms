@@ -3,9 +3,9 @@
     namespace App;
 
     class User
-    {
+    {        
         /** @var Database $connect This is a static database connection */
-        protected static Database $connect;
+        protected Database $connect;
 
         /** @var string[] $table_keys The necessary keys to be seen from input elements */
         protected array $table_keys = [
@@ -16,8 +16,9 @@
         public bool $loggedIn;
         
         public function __construct(
+            Database $database,
             protected int $user_id = 0, protected string $lname = "", protected string $oname = "",
-            protected string $username = "", protected $user_role = 0
+            protected string $username = "", protected int $user_role = 0
         ){
             $this->user_id = $user_id;
             $this->lname = $lname;
@@ -25,7 +26,7 @@
             $this->username = $username;
             $this->user_role = $user_role;
 
-            self::$connect = new Database;
+            $this->connect = $database;
             $this->loggedIn = false;
         }
 
@@ -41,37 +42,41 @@
 
                 if($response === false){
                     $response = "Password does not match the username";
-                    self::$connect->setStatus($response, true);
+                    $this->connect->setStatus($response, true);
                 }else{
-                    self::$connect->setStatus("'$username' is signed in", true);
+                    $this->connect->setStatus("'$username' is signed in", true);
                     $this->loggedIn = true;
                 }
             }else{
                 $response = "Username '$username' not found. Please check and try again";
-                self::$connect->setStatus($response, true);
+                $this->connect->setStatus($response, true);
             }
 
             return $response;
         }
 
         public function create(array $details) :bool|string{
+            //provide a user role if one is not provided but return false if there is no user role defined by class
+            if($this->user_role > 0){
+                $details["user_role"] = $this->setDefault($details, "user_role", $this->user_role);
+            }
+
             $response = $this->checkInsert($details);
             
             if($response){
-                $response = self::$connect->insert("users", $details);
+                $response = $this->connect->insert("users", $details);
 
                 //create login info
                 if($response === true){
-                    $new_det["password"] = password_hash($details["password"] ?? "Password@1", PASSWORD_DEFAULT);
+                    $password = $this->setDefault($details, "password", "Password@1");
+                    $new_det["password"] = password_hash($password, PASSWORD_DEFAULT);
                     $new_det["username"] = $details["username"];
-                    $new_det["user_id"] = $this->user_id = self::$connect->insert_id;
+                    $new_det["user_id"] = $this->user_id = $this->connect->insert_id;
 
-                    $response = self::$connect->insert("userlogin", $new_det);
+                    $response = $this->connect->insert("userlogin", $new_det);
                 }
             }else{
-                $response = "Array list sent does not conform to table columns";
-                self::$connect->setStatus($response.
-                    "<br> Array(".implode(", ", $details).")", true);
+                $response = $this->connect->status();
             }
 
             return $response;
@@ -80,7 +85,7 @@
         protected function passwordMatch($password, $username) :bool{
             $response = false;
 
-            $db_password = self::$connect->fetch("password","userlogin","username='$username'");
+            $db_password = $this->connect->fetch("password","userlogin","username='$username'");
             if(is_array($db_password)){
                 $response = password_verify($password, $db_password[0]["password"]);
             }
@@ -95,7 +100,9 @@
             //loop through input array for the value
             foreach($keys as $key){
                 if(array_search($key, $this->table_keys) === false){
-                    $response = false; break;
+                    $response = false;
+                    $this->connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
+                    break;
                 }
             }
             
@@ -108,12 +115,12 @@
         }
 
         public function logs() :array{
-            return self::$connect->getLogs();
+            return $this->connect->getLogs();
         }
 
         public static function find(int $user_id, string|array $columns = "", User $instance = new self) :self|bool{
             $columns = empty($columns) ? "*" : $columns;
-            $search = $instance::$connect->fetch("*","users","id=$user_id");
+            $search = $instance->connect->fetch("*","users","id=$user_id");
 
             if(is_array($search)){
                 //create a new instance of the user
@@ -121,7 +128,7 @@
                 $user = new self(...array_values($search));
             }else{
                 $search = $search !== false ? $search : "User was not found";
-                self::$connect->setStatus($search, true);
+                $instance->connect->setStatus($search, true);
                 
                 $user = false;
             }
@@ -130,7 +137,7 @@
         }
 
         private function checkUsername($username) :bool{
-            $response = self::$connect->fetch("id","users","username='$username'");
+            $response = $this->connect->fetch("id","users","username='$username'");
             $response = is_array($response[0]) ? true : false;
 
             return $response;
@@ -145,5 +152,27 @@
             $search_results["user_role"] = intval($search_results["user_role"]);
 
             return $search_results;
+        }
+
+        /**
+         * This function is used to fetch all user data from the database
+         */
+        public function all() :array|string|bool{
+            $column = "*"; $table = "users"; $where = "";
+            if($this->user_role > 0){
+                $where = "user_role={$this->user_role}";
+            }
+
+            $response = $this->connect->fetch($column, $table, $where);
+
+            return $response;
+        }
+
+        protected function setDefault(array $array, string|int $key, $default_value){
+            return empty($array[$key]) || is_null($array[$key]) ? $default_value : $array[$key];
+        }
+
+        private function validate(array $data, string $mode){
+
         }
     }
