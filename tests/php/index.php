@@ -1,6 +1,10 @@
 <?php
     require("../../autoloader.php");
 
+    //handle exceptions
+    set_exception_handler("Error::handleError");
+    set_exception_handler("Error::handleException");
+
     use App\Student;
     
     $_POST["index_number"] = "0323080224";
@@ -9,7 +13,7 @@
 
     //student_login
     $student = new Student();
-    
+
     echo "<pre>";
     var_dump($student->login(), $student->logs());
     echo "</pre>";
