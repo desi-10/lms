@@ -12,7 +12,7 @@
         private string $status1;
 
         private array $logs = [];
-        private array $trace = [];
+        private array $queries = [];
 
         public function __construct(
             private string $host = "localhost", private string $username  = "root",  
@@ -33,6 +33,17 @@
                 $this->setStatus("success");
                 $this->addLog("Database connection was successful");
             }
+        }
+
+        /**This function returns all queries done from the database */
+        public function queries() :array{
+            return $this->queries;
+        }
+
+        private function setQuery(string $sql, array $values = []){
+            $this->queries[] = [
+                "statement" => $sql, "values" => implode(", ",$values)
+            ];
         }
 
         public function status(){
@@ -81,7 +92,12 @@
                 $table_name = $this->stringifyTable($table_name);
                 $where = $this->stringifyWhere($where, $where_binds);
 
-                $sql = "SELECT $columns FROM $table_name WHERE $where";
+                $sql = "SELECT $columns FROM $table_name";
+                $sql .= !empty($where) ? " WHERE $where" : "";
+
+                //record query
+                $this->setQuery($sql);
+
                 $data = $this->query($sql);
                 
                 if($data->num_rows > 0){
@@ -95,8 +111,7 @@
                 }
             }catch(Throwable $th){
                 $response = false;
-                $this->setStatus($th->getMessage());
-                $this->addLog($th->getTraceAsString());
+                $this->setStatus($th->getMessage(), true);
             }
 
             return $response;
@@ -245,10 +260,13 @@
         
                     $sql = "INSERT INTO $table_name (".implode(", ", $columns).") VALUES ($placeholders)";
                     
+                    //keep track of query
+                    $this->setQuery($sql, $values);
+                    
                     if($response = $this->parse($sql, $values)){
                         $this->setStatus("Data was added to '$table_name' table", true);
                     }else{
-                        $this->setStatus("Data could not be added to table '$table_name'", true);
+                        $this->addLog("Data could not be added to table '$table_name'");
                     }
                 }else{
                     $this->setStatus("Table not found", true);
@@ -274,14 +292,14 @@
                 $condition = $this->stringifyWhere($condition, $condition_binds);
 
                 $sql = "DELETE FROM $table WHERE $condition";
+                $this->setQuery($sql);
 
                 if($this->query($sql)){
                     $response = true;
                     $this->setStatus("Data deleted from '$table'", true);
                 }
             } catch (Throwable $th) {
-                $this->setStatus($th->getMessage());
-                $this->addLog($th->getTraceAsString());
+                $this->setStatus($th->getMessage(), true);
             }
             
             return $response;
@@ -296,10 +314,15 @@
          */
         private function parse(string $prepared_statement, array $values) :bool{
             $response = false;
-            $stmt = $this->prepare($prepared_statement);
+
+            try{
+                $stmt = $this->prepare($prepared_statement);
                     
-            if($stmt->execute($values) !== false){
-                $response = true;
+                if($stmt->execute($values) !== false){
+                    $response = true;
+                }
+            }catch(Throwable $th){
+                $this->setStatus($th->getMessage(), true);
             }
 
             return $response;
