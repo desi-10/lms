@@ -6,8 +6,8 @@
     use App\Controller\ResponseController;
     use App\Error;
 
+    set_error_handler([Error::class, "handleError"]);
     set_exception_handler([Error::class, "errorHandler"]);
-    // set_exception_handler([Error::class, "handleError"]);
 
     header("Content-type: application/json");
 
