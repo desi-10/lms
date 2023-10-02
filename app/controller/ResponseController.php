@@ -24,10 +24,26 @@
          */
         private function processResource(string $method, string $class_name, string $id){
             $object = new $class_name($this->database);
+            $success = false;
 
             switch($method){
+                case "GET":
+                    $results = $object::find($id);
+                    
+                    if($results !== false){
+                        $success = true;
+                        $results = $results->data();
+                    }else{
+                        $results = "No results were found";
+                    }
 
+                    break;
+                case "POST":
+                        break;
             }
+
+            echo json_encode(["success" => $success, "results" => $results]);
+            // echo json_encode(["success" => $success, "results" => $results, "queries" => $this->database->queries(), "logs" => $this->database->getLogs()]);
         }
 
         /**
@@ -50,6 +66,7 @@
                     $results = $object->create($data);
 
                     if($results === true){
+                        http_response_code(201);
                         $success = true;
                     }else{
                         $success = false;
@@ -58,7 +75,9 @@
                     
                     break;
                 default:
-                    http_response_code(501);
+                    http_response_code(405);
+                    $success = false;
+                    $results = "Method not allowed";
                     header("Allow: GET, POST");
             }
 
