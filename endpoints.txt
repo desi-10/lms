@@ -28,3 +28,11 @@ Use the "PATCH REQUEST" to update an item. It goes in the endpoint format /api/i
 
 | DELETE REQUESTS
 Use the "DELETE REQUEST" method to delete an item from the table. It goes with the endpoint format /api/identifier/key
+
+
+Responses are received in the format
+{
+        "success": bool,
+        "results": array|string|bool,
+        "message": string
+}
