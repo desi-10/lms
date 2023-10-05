@@ -34,15 +34,30 @@
                         $success = true;
                         $results = $results->data();
                     }else{
+                        http_response_code(404);
                         $results = "No results were found";
                     }
 
                     break;
-                case "POST":
+                case "PATCH":
+                    // $results = $_REQUEST;
+                    $data = $this->getInputs();
+
+                    //insert the id if it is not provided
+                    $data["id"] = $data["id"] ?? $id;
+
+                    $results = $object->update($data);
+                    // $results = $object->update($_REQUEST);
+                    break;
+                case "DELETE":
+                        $results = $object->delete($id);
                         break;
+                default:
+                    http_response_code(405);
+                    header("Allow: GET, PATCH, DELETE");
             }
 
-            echo json_encode(["success" => $success, "results" => $results]);
+            echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
             // echo json_encode(["success" => $success, "results" => $results, "queries" => $this->database->queries(), "logs" => $this->database->getLogs()]);
         }
 
@@ -83,5 +98,21 @@
 
             echo json_encode(["success" => $success, "results" => $results]);
             // echo json_encode(["success" => $success, "results" => $results, "queries" => $this->database->queries(), "logs" => $this->database->getLogs()]);
+        }
+
+        private function getInputs() :array{
+            $inputs = file_get_contents("php://input");
+            $data = [];
+
+            if(str_contains($inputs, "=")){
+                $inputs = explode("&",file_get_contents("php://input"));
+                foreach($inputs as $input){
+                    $input = explode("=",$input);
+                    $data[$input[0]] = str_replace(["+"], [" "], $input[1]);
+                }
+            }
+            
+
+            return $data;
         }
     }
