@@ -9,6 +9,8 @@
         protected string|array $columns;
         protected string|array $where;
 
+        protected string $class_table;
+
         /**
          * This function is used to set array values with default values if empty 
          * @param array $array The array to search through
@@ -30,5 +32,19 @@
          */
         protected function set_default($subject, $default_value){
             return empty($subject) || is_null($subject) ? $default_value : $subject;
+        }
+
+        /**
+         * This function is used to replace an array key with a new key and remove the old key
+         * @param array $array The array to be worked on
+         * @param string|int $old_key The name of the key to be replaced
+         * @param string|int $new_key The name of the new key
+         * @return void returns nothing, only makes the change
+         */
+        protected function replaceKey(array &$array, int|string $old_key, int|string $new_key){
+            if(isset($array[$old_key])){
+                $array[$new_key] = $array[$old_key];
+                unset($array[$old_key]);
+            }
         }
     }
