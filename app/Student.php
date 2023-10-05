@@ -20,6 +20,7 @@
                     ]
                 ];
                 $this->setIndexNumber($index_number);
+                $this->class_table = "students";
         }
 
         public function getIndexNumber() :string{
@@ -28,6 +29,38 @@
 
         public function setIndexNumber(string $value) :void{
             $this->index_number = $value;
+        }
+
+        public function update(array $details) : string|bool{
+            if(!empty($details["index_number"])){
+                if(($response = self::find($details["id"])) !== false){
+                    //store student details
+                    $student = ["index_number" => $details["index_number"], "user_id" => $details["id"]];
+
+                    $response = $this->connect->update($response->data(), $student, $this->class_table, ["index_number","user_id"], "AND");
+
+                    if($response === true){
+                        //remove index_number from list
+                        unset($details["index_number"]);
+
+                        //update users table
+                        $this->class_table = "users";
+                        $response = parent::update($details);
+                    }
+                }else{
+                    $response = "Student provided is not found";
+                }
+            }else{
+                $response = "No index number found";
+            }
+
+            $this->resetClassTable();
+
+            return $response;
+        }
+
+        private function resetClassTable(){
+            $this->class_table = "students";
         }
 
         public function login() :int|string|bool{
@@ -117,6 +150,21 @@
             return $response;
         }
 
+        public function delete(string|int $user_id) :bool{
+            //get user id
+            $user = $this->connect->fetch(["user_id"], $this->class_table, ["index_number='$user_id'", "user_id=$user_id"], "OR")[0]["user_id"] ?? false;
+            
+            if(ctype_digit($user)){
+                $this->connect->delete("students","user_id=$user");
+                $response = parent::delete($user);
+            }else{
+                $response = false;
+                $this->connect->setStatus("Student '$user_id' could not be deleted", true);
+            }
+
+            return $response;
+        }
+
         public function createIndexNumber(){
             $department_id = "08";
             $indexNumber = "03" . date("y") . $department_id;
@@ -138,6 +186,19 @@
             $where = "user_role={$this->user_role}";
 
             $response = $this->connect->fetch($column, $table, $where);
+
+            return $response;
+        }
+
+        protected function validate(array $data, string $mode) :bool|string{
+            $response = true;
+
+            //check if there is an index_number
+            if($this->class_table == "student" && (empty($data["index_number"]) || is_null($data["index_number"]))){
+                $response = "No index number value provided";
+            }else{
+                $response = parent::validate($data, $mode);
+            }
 
             return $response;
         }

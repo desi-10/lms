@@ -31,6 +31,7 @@
 
             $this->connect = $database;
             self::$loggedIn = false;
+            $this->class_table = "users";
         }
 
         public function data() :array|string{
@@ -74,6 +75,11 @@
             return $response;
         }
 
+        /**
+         * This is used to add a new user to the database
+         * @param array $details This is the array data to be sent into the database
+         * @return bool|string returns true or an error string
+         */
         public function create(array $details) :bool|string{
             //provide a user role if one is not provided but return false if there is no user role defined by class
             if($this->user_role > 0){
@@ -103,6 +109,66 @@
                 $response = $this->connect->status();
             }
 
+            return $response;
+        }
+
+        /**
+         * This function is used to update a user record
+         * @param array $details This is the set of details to be used. It should also have an id field
+         * @return bool|string returns true or a string error message
+         */
+        public function update(array $details) :string|bool{
+            //validate data request
+            if(($response = $this->validate($details, "update")) === true){
+                //grab user details
+                if(($current_details = static::find($details["id"]))!==false){
+                    $current_details = $current_details->data();
+
+                    //change any user_id to id
+                    $this->replaceKey($current_details, "user_id", "id");
+
+                    //update user table
+                    if(($response = $this->connect->update($current_details, 
+                        $details, $this->class_table, ["id"])) === true){
+                        //update the logins table
+                        $login_details = [
+                            "user_id" => $current_details["id"],
+                            "username" => $current_details["username"]
+                        ];
+
+                        $response = $this->updateLogins($login_details);
+                        if($response === true){
+                            $this->connect->setStatus("'{$current_details['username']}' was updated successfully", true);
+                        }
+                    }
+                }else{
+                    $response = "User not found";
+                }
+            }
+
+            return $response;
+        }
+
+        public function updateLogins(array $user_data){
+            $user_id = $user_data["id"] ?? $user_data["user_id"];
+            $user = $this->connect->fetch("*","userlogin","user_id=$user_id");
+
+            if(is_array($user)){
+                $user = $user[0];
+                if(!empty($user_data["password"])){
+                    $user_data["password"] = password_hash($user_data["password"], PASSWORD_DEFAULT);
+                }else{
+                    $user_data["password"] = $user["password"];
+                }
+
+                //convert id key to user_id
+                $this->replaceKey($user_data, "id", "user_id");
+
+                $response = $this->connect->update($user, $user_data, "userlogin", ["user_id"]);
+            }else{
+                $response = "User not found";
+            }
+            
             return $response;
         }
 
@@ -200,7 +266,7 @@
             return $response;
         }
 
-        private function validate(array $data, string $mode) :string|bool{
+        protected function validate(array $data, string $mode) :string|bool{
             $response = true;
 
             //general checks
@@ -217,11 +283,24 @@
             }
             
             if(strtolower($mode) == "update"){
-                if(empty($data["password"]) || is_null($data["password"])){
-                    $response = "Password was not specified";
+                if(empty($data["id"]) || is_null($data["id"])){
+                    $response = "User was not specified";
                 }
             }
 
+            return $response;
+        }
+
+        public function delete(string|int $user_id) :bool{
+            $response = $this->connect->delete("users", "id=$user_id");
+
+            if($response){
+                $this->connect->delete("userlogin","user_id=$user_id");
+                $this->connect->setStatus("User '$user_id' record deleted", true);
+            }else{
+                $this->connect->setStatus("User '$user_id' record could not be deleted", true);
+            }
+            
             return $response;
         }
     }
