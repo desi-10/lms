@@ -280,6 +280,62 @@
         }
 
         /**
+         * Update some set of records
+         * @param string[] $original The originial or initial values
+         * @param string[] $new_data The new replacement data 
+         * @param string $table The name of the table to be updated
+         * @param string|array $conditions The set of condition(s) to be checked
+         * @param string|array $condition_binds This holds either AND, OR or any of the binds for the conditions
+         * @return bool|string returns true if successful or a string of message
+         */
+        public function update(array $original, array $new_data, string $table, array $conditions, string|array $condition_binds = "") :bool|string{
+            $response = false;
+
+            //grab column keys and values
+            $keys = array_keys($new_data);
+            $values = array_values($new_data);
+
+            //set condition string
+            $conditions = $this->updateWhere($conditions, $original, $values, $condition_binds);
+            
+            //set column string
+            $columns = $this->updateColumns($keys);
+            
+            $this->setQuery($sql = "UPDATE $table SET $columns WHERE $conditions", $values);
+            
+            if($response = $this->parse($sql, $values)){
+                $this->setStatus("Data was updated on '$table' table", true);
+            }else{
+                $this->addLog("Data could not be updated on table '$table'");
+            }
+
+            return $response;
+        }
+
+        private function updateColumns(array $columns) :string{
+            $response = [];
+
+            foreach($columns as $column){
+                $response[] = "$column = ?";
+            }
+
+            return implode(", ",$response);
+        }
+
+        private function updateWhere(array $keys, array $subject, array &$values, string|array $condition_binds) :string{
+            $response = [];
+
+            foreach($keys as $key){
+                $response[] = "$key = ?";
+                
+                //pass value into values
+                array_push($values, $subject[$key]);
+            }
+
+            return $this->stringifyWhere($response, $condition_binds);
+        }
+
+        /**
          * This function is used to delete from a specific table
          * @param string $table The name of the table from which data should be deleted
          * @param string|string[] $condition The condition to be used 
