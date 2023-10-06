@@ -1,12 +1,40 @@
-import { FormEvent } from "react";
+import axios from "axios";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/AuthContext";
+import { saveToLocalStorage } from "../utils/localStorage";
 
 const Login = () => {
+  const { setUser } = useUser();
   const navigate = useNavigate();
 
-  const handleSubmit = (event: FormEvent) => {
+  const [userData, setUserData] = useState({
+    indexnumber: "",
+    password: "",
+    checkbox: false,
+  });
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, type, value, checked } = event.target;
+    setUserData((prev) => {
+      return {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+    });
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    navigate("/dashboard");
+
+    try {
+      const { data } = await axios.post("http://localhost:8080", userData);
+      setUser(data);
+      saveToLocalStorage(data);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(error);
+    }
   };
   return (
     <main className="h-screen flex justify-center items-center bg-slate-50 text-slate-500">
@@ -33,9 +61,11 @@ const Login = () => {
               </label>
               <input
                 type="text"
-                name=""
+                name="indexnumber"
+                value={userData.indexnumber}
                 maxLength={10}
                 className="p-2 border rounded-lg bg-slate-50 border-slate-300"
+                onChange={handleChange}
               />
             </div>
             <div className="grid lg:space-y-1">
@@ -44,15 +74,22 @@ const Login = () => {
               </label>
               <input
                 type="password"
-                name=""
+                name="password"
+                value={userData.password}
                 maxLength={20}
                 className="p-2 border rounded-lg bg-slate-50 border-slate-300"
+                onChange={handleChange}
               />
             </div>
 
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <input type="checkbox" name="" id="" />
+                <input
+                  type="checkbox"
+                  name="checkbox"
+                  checked={userData.checkbox}
+                  onChange={handleChange}
+                />
                 <label htmlFor="" className="ml-3 text-sm">
                   Remember me
                 </label>
