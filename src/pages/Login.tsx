@@ -1,8 +1,11 @@
 import axios from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/AuthContext";
+import { saveToLocalStorage } from "../utils/localStorage";
 
 const Login = () => {
+  const { setUser } = useUser();
   const navigate = useNavigate();
 
   const [userData, setUserData] = useState({
@@ -25,7 +28,9 @@ const Login = () => {
     event.preventDefault();
 
     try {
-      await axios.post("http://localhost:8080", userData);
+      const { data } = await axios.post("http://localhost:8080", userData);
+      setUser(data);
+      saveToLocalStorage(data);
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
