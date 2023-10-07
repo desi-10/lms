@@ -83,6 +83,7 @@
                         http_response_code(405);
                         header("Allow: GET, PATCH, DELETE, POST");
                 }
+
             }
 
             echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
