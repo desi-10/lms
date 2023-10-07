@@ -3,15 +3,28 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { Link } from "react-router-dom";
 
 const CoursePage = () => {
+  const goBack = () => {
+    window.history.back();
+  };
+  const goForward = () => {
+    window.history.back();
+  };
+
   return (
-    <section className=" lg:block lg:px-5 lg:py-3 ">
-      <div className="flex justify-between items-center">
+    <section className="">
+      <div className="sticky top-0 left-0 z-10 bg-slate-50 p-5 flex justify-between items-center mb-5">
         <div className="flex items-center space-x-5">
           <div className="flex items-center">
-            <i className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300">
+            <i
+              onClick={goBack}
+              className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300"
+            >
               <IoIosArrowBack />
             </i>
-            <i className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300">
+            <i
+              onClick={goForward}
+              className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300"
+            >
               <IoIosArrowForward />
             </i>
           </div>
@@ -25,7 +38,7 @@ const CoursePage = () => {
         </div>
       </div>
 
-      <section className="py-5 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-center">
+      <section className="ml-5 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-center">
         <div className="group w-[90%] lg:w-52 mx-auto lg:mx-0 border rounded-lg border-slate-300 cursor-pointer">
           <Link to="coursedetails">
             <div className="flex justify-center items-center h-36">

@@ -1,39 +1,45 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-type User = {
+export interface IStudent {
   id: number;
+  index_number: string;
+  lname: string;
+  oname: string;
   username: string;
-  email: string;
-  accessToken: string;
+  user_role: string;
+  token: string;
+}
+
+type StudentContextType = {
+  student: IStudent | null;
+  setStudent: (student: IStudent | null) => void;
 };
 
-type UserContextType = {
-  user: User | null;
-  setUser: (user: User | null) => void;
-};
+const StudentContext = createContext<StudentContextType>({
+  student: null,
+  setStudent: () => {},
+});
 
-const UserContext = createContext<UserContextType | null>(null);
-
-type UserProviderProps = {
+type StudentProviderProps = {
   children: ReactNode;
 };
 
-const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+const StudentProvider: React.FC<StudentProviderProps> = ({ children }) => {
+  const [student, setStudent] = useState<IStudent | null>(null);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <StudentContext.Provider value={{ student, setStudent }}>
       {children}
-    </UserContext.Provider>
+    </StudentContext.Provider>
   );
 };
 
-export const useUser = () => {
-  const context = useContext(UserContext);
+export const useStudent = () => {
+  const context = useContext(StudentContext);
   if (!context) {
-    throw new Error("useUser must be used within a UserProvider");
+    throw new Error("useStudent must be used within a StudentProvider");
   }
   return context;
 };
 
-export default UserProvider;
+export default StudentProvider;

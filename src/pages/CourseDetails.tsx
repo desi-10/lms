@@ -1,15 +1,28 @@
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 const CourseDetails = () => {
+  const goBack = () => {
+    window.history.back();
+  };
+
+  const goForward = () => {
+    window.history.forward();
+  };
   return (
     <section className="">
       <div className="sticky top-0 left-0 z-10 bg-slate-50 p-5 flex justify-between items-center mb-5">
         <div className="flex items-center space-x-5">
           <div className="flex items-center">
-            <i className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300">
+            <i
+              onClick={goBack}
+              className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300"
+            >
               <IoIosArrowBack />
             </i>
-            <i className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300">
+            <i
+              onClick={goForward}
+              className="p-2 hover:bg-slate-200 rounded-full transition-all duration-300"
+            >
               <IoIosArrowForward />
             </i>
           </div>
@@ -17,10 +30,6 @@ const CourseDetails = () => {
             Dashboard / Coruse-page /
             <span className="font-bold"> Course-details</span>
           </p>
-        </div>
-        <div className="hidden lg:flex items-center space-x-5">
-          <i>///</i>
-          <i>///</i>
         </div>
       </div>
       <div>
