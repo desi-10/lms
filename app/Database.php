@@ -9,7 +9,6 @@
     class Database extends mysqli
     {
         private string $status;
-        private string $status1;
 
         private array $logs = [];
         private array $queries = [];
@@ -18,11 +17,6 @@
             private string $host = "localhost", private string $username  = "root",  
             private string $password = "", private string $database = "elms"
         ){
-            $this->$host = $host; 
-            $this->$username = $username; 
-            $this->password = $password; 
-            $this->database = $database;
-
             $this->connect($host, $username, $password, $database);
 
             if($this->connect_errno){
@@ -66,7 +60,7 @@
         }
 
         public function clearStatus(){
-            $this->status = $this->status1 = "";
+            $this->status = "";
         }
 
         /**
