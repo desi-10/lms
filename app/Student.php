@@ -37,7 +37,7 @@
                     //store student details
                     $student = ["index_number" => $details["index_number"], "user_id" => $details["id"]];
 
-                    $response = $this->connect->update($response->data(), $student, $this->class_table, ["index_number","user_id"], "AND");
+                    $response = static::$connect->update($response->data(), $student, $this->class_table, ["index_number","user_id"], "AND");
 
                     if($response === true){
                         //remove index_number from list
@@ -63,14 +63,14 @@
             $this->class_table = "students";
         }
 
-        public function login() :int|string|bool{
+        public function login() :string|array|bool{
             $response = false;
             try {
                 list("index_number" => $index_number, "password" => $password) = $_POST;
 
                 //search the index number
                 $tables = $this->table;
-                $found_index = $this->connect->fetch("u.username",$tables,
+                $found_index = static::$connect->fetch("u.username",$tables,
                     "s.index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
                 
                 if(is_array($found_index)){
@@ -144,7 +144,7 @@
                     "index_number" => $index_number
                 ];
 
-                $response = $this->connect->insert("students", $student_data);
+                $response = static::$connect->insert("students", $student_data);
             }
 
             return $response;
@@ -152,14 +152,14 @@
 
         public function delete(string|int $user_id) :bool{
             //get user id
-            $user = $this->connect->fetch(["user_id"], $this->class_table, ["index_number='$user_id'", "user_id=$user_id"], "OR")[0]["user_id"] ?? false;
+            $user = static::$connect->fetch(["user_id"], $this->class_table, ["index_number='$user_id'", "user_id=$user_id"], "OR")[0]["user_id"] ?? false;
             
             if(ctype_digit($user)){
-                $this->connect->delete("students","user_id=$user");
+                static::$connect->delete("students","user_id=$user");
                 $response = parent::delete($user);
             }else{
                 $response = false;
-                $this->connect->setStatus("Student '$user_id' could not be deleted", true);
+                static::$connect->setStatus("Student '$user_id' could not be deleted", true);
             }
 
             return $response;
@@ -185,7 +185,7 @@
             ]; 
             $where = "user_role={$this->user_role}";
 
-            $response = $this->connect->fetch($column, $table, $where);
+            $response = static::$connect->fetch($column, $table, $where);
 
             return $response;
         }

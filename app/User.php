@@ -2,13 +2,14 @@
     declare(strict_types=1);
     namespace App;
     use App\Traits\Table;
+    use App\Traits\Token;
 
     class User
     {
-        use Table;
+        use Table, Token;
         
         /** @var Database $connect This is a static database connection */
-        protected Database $connect;
+        protected static Database $connect;
 
         /** @var string[] $table_keys The necessary keys to be seen from input elements */
         protected array $table_keys = [
@@ -29,7 +30,7 @@
             $this->username = $username;
             $this->user_role = $user_role;
 
-            $this->connect = $database;
+            static::$connect = $database;
             self::$loggedIn = false;
             $this->class_table = "users";
         }
@@ -50,7 +51,7 @@
             return $response;
         }
 
-        public function login() :int|string|bool{
+        public function login() :string|array|bool{
             self::$loggedIn = $response = false;
 
             //grab components
@@ -62,14 +63,44 @@
 
                 if($response === false){
                     $response = "Password does not match the username";
-                    $this->connect->setStatus($response, true);
+                    static::$connect->setStatus($response, true);
                 }else{
-                    $this->connect->setStatus("'$username' is signed in", true);
-                    self::$loggedIn = true;
+                    static::$connect->setStatus("'$username' is signed in", true);
+                    $id = (int) static::$connect->fetch("id","users","username='$username'")[0]["id"];
+                    
+                    //send user data and user token
+                    $response = static::find($id)->data();
+                    $response["token"] = $this->generateToken($id);
                 }
             }else{
                 $response = "Username '$username' not found. Please check and try again";
-                $this->connect->setStatus($response, true);
+                static::$connect->setStatus($response, true);
+            }
+
+            return $response;
+        }
+
+        /**
+         * This function provides the details of the current signed in user
+         * @return static|array|bool returns the data of the current logged in user or false if there is none
+         */
+        public static function auth() :static|array|string|bool{
+            $response = false;
+            
+            $headers = getallheaders();
+
+            //check for a header called authorization
+            if(isset($headers["Authorization"])){
+                //remove bearer
+                $token = str_replace("Bearer","", $headers["Authorization"]);
+                $decoded = static::decode($token);
+
+                if(is_array($decoded)){
+                    $response = static::find($decoded["user_id"]);
+                    // $response = $decoded;
+                }else{
+                    $response = "Error: $decoded";
+                }
             }
 
             return $response;
@@ -89,24 +120,24 @@
             //check if the necessary fields are present            
             if($this->checkInsert($details)){
                 if(($response = $this->validate($details, "insert")) === true){
-                    $response = $this->connect->insert("users", $details);
+                    $response = static::$connect->insert("users", $details);
 
                     //create login info
                     if($response === true){
                         $password = $this->setDefault($details, "password", "Password@1");
                         $new_det["password"] = password_hash($password, PASSWORD_DEFAULT);
                         $new_det["username"] = $details["username"];
-                        $new_det["user_id"] = $this->user_id = $this->connect->insert_id;
+                        $new_det["user_id"] = $this->user_id = static::$connect->insert_id;
 
-                        $response = $this->connect->insert("userlogin", $new_det);
+                        $response = static::$connect->insert("userlogin", $new_det);
                     }
                 }else{
                     http_response_code(422);
-                    $this->connect->setStatus((string) $response, true);
+                    static::$connect->setStatus((string) $response, true);
                 }
             }else{
                 http_response_code(422);
-                $response = $this->connect->status();
+                $response = static::$connect->status();
             }
 
             return $response;
@@ -128,7 +159,7 @@
                     $this->replaceKey($current_details, "user_id", "id");
 
                     //update user table
-                    if(($response = $this->connect->update($current_details, 
+                    if(($response = static::$connect->update($current_details, 
                         $details, $this->class_table, ["id"])) === true){
                         //update the logins table
                         $login_details = [
@@ -138,7 +169,7 @@
 
                         $response = $this->updateLogins($login_details);
                         if($response === true){
-                            $this->connect->setStatus("'{$current_details['username']}' was updated successfully", true);
+                            static::$connect->setStatus("'{$current_details['username']}' was updated successfully", true);
                         }
                     }
                 }else{
@@ -151,7 +182,7 @@
 
         public function updateLogins(array $user_data){
             $user_id = $user_data["id"] ?? $user_data["user_id"];
-            $user = $this->connect->fetch("*","userlogin","user_id=$user_id");
+            $user = static::$connect->fetch("*","userlogin","user_id=$user_id");
 
             if(is_array($user)){
                 $user = $user[0];
@@ -164,7 +195,7 @@
                 //convert id key to user_id
                 $this->replaceKey($user_data, "id", "user_id");
 
-                $response = $this->connect->update($user, $user_data, "userlogin", ["user_id"]);
+                $response = static::$connect->update($user, $user_data, "userlogin", ["user_id"]);
             }else{
                 $response = "User not found";
             }
@@ -175,7 +206,7 @@
         protected function passwordMatch($password, $username) :bool{
             $response = false;
 
-            $db_password = $this->connect->fetch("password","userlogin","username='$username'");
+            $db_password = static::$connect->fetch("password","userlogin","username='$username'");
             if(is_array($db_password)){
                 $response = password_verify($password, $db_password[0]["password"]);
             }
@@ -191,7 +222,7 @@
             foreach($keys as $key){
                 if(array_search($key, $this->table_keys) === false){
                     $response = false;
-                    $this->connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
+                    static::$connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
                     break;
                 }
             }
@@ -205,7 +236,7 @@
         }
 
         public function logs() :array{
-            return $this->connect->getLogs();
+            return static::$connect->getLogs();
         }
 
         public static function find(string|int $user_id, $table = []) :static|false{
@@ -218,15 +249,15 @@
                 $columns = "*"; $tables = "users"; $where = "id=$user_id";
             }
             
-            $search = $instance->connect->fetch($columns,$tables,$where);
+            $search = static::$connect->fetch($columns,$tables,$where);
 
             if(is_array($search)){
                 //create a new instance of the user
                 $search = $instance->convertToConstruct($search);
-                $user = new static($instance->connect, ...array_values($search));
+                $user = new static(static::$connect, ...array_values($search));
             }else{
                 $search = $search !== false ? $search : "User was not found";
-                $instance->connect->setStatus($search, true);
+                static::$connect->setStatus($search, true);
                 
                 $user = false;
             }
@@ -235,7 +266,7 @@
         }
 
         private function checkUsername($username) :bool{
-            $response = $this->connect->fetch("id","users","username='$username'");
+            $response = static::$connect->fetch("id","users","username='$username'");
             $response = is_array($response[0]) ? true : false;
 
             return $response;
@@ -261,7 +292,7 @@
                 $where = "user_role={$this->user_role}";
             }
 
-            $response = $this->connect->fetch($column, $table, $where);
+            $response = static::$connect->fetch($column, $table, $where);
 
             return $response;
         }
@@ -292,13 +323,13 @@
         }
 
         public function delete(string|int $user_id) :bool{
-            $response = $this->connect->delete("users", "id=$user_id");
+            $response = static::$connect->delete("users", "id=$user_id");
 
             if($response){
-                $this->connect->delete("userlogin","user_id=$user_id");
-                $this->connect->setStatus("User '$user_id' record deleted", true);
+                static::$connect->delete("userlogin","user_id=$user_id");
+                static::$connect->setStatus("User '$user_id' record deleted", true);
             }else{
-                $this->connect->setStatus("User '$user_id' record could not be deleted", true);
+                static::$connect->setStatus("User '$user_id' record could not be deleted", true);
             }
             
             return $response;
