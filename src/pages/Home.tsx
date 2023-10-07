@@ -6,7 +6,7 @@ type ICourses = {
   id: number;
   course_name: string;
   course_alise: string;
-  instructor_id: string;
+  instructor_id: number;
 };
 
 const Home = () => {
@@ -14,7 +14,7 @@ const Home = () => {
 
   const getAllCourses = async () => {
     try {
-      const { data } = await axios("http://localhost:8080");
+      const { data }: { data: ICourses } = await axios("http://localhost:8080");
       setCourses(data);
     } catch (error) {
       console.error(error);
@@ -24,6 +24,7 @@ const Home = () => {
   useEffect(() => {
     getAllCourses();
   }, []);
+
   return (
     <section className="p-5 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-center">
       <div className="group w-[90%] lg:w-52 mx-auto lg:mx-0 border rounded-lg border-slate-300 cursor-pointer">
