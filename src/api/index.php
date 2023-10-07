@@ -1,33 +1,39 @@
 <?php 
-    require_once "../../autoloader.php";
+    declare(strict_types=1);
+    require("api_access.php");
+    require("autoload.php");
 
-    use App\Student;
+    use App\Controller\ResponseController;
+    use App\Error;
 
-    //response variables
-    $message = null; $error = true;
+    set_error_handler([Error::class, "handleError"]);
+    set_exception_handler([Error::class, "errorHandler"]);
 
-    if(isset($_POST["submit"])){
-        $submit = $_POST["submit"];
+    header("Content-type: application/json");
 
-        if($submit == "student_login"){
-            $student = new Student;
+    //request types
+    $fetch = ["GET"];
+    $create = ["POST"];
+    $update = ["PATCH"];
+    $delete = ["DELETE"];
+    $all = array_merge($fetch, $create, $update, $delete);
 
-            //create a session variable if student is logged in
-            $message = $student->login();
+    //server request data
+    $request_method = $_SERVER["REQUEST_METHOD"];
+    $request_uri = $_SERVER["REQUEST_URI"];
 
-            if($message === true){
-                $error = false;
-            }
-        }
-    }else{
-        $message = "No submission was detected";
-    }
-
-    //grab the response messages
-    $response = [
-        "error" => $error, "message" => $message
+    //api endpoints
+    $endpoints = [
+        "/api/users" => [
+            "requests" => $all,
+            "class_name" => "user"
+        ],
+        "/api/student" => [
+            "requests" => $all,
+            "class_name" => "student"
+        ],
+        "/api/instructor" => [
+            "requests" => $all,
+            "class_name" => "instructor"
+        ]
     ];
-
-    //send a json encoded response
-    // header("Content-Type: appliction/json");
-    echo json_encode($response);
