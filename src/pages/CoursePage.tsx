@@ -3,6 +3,13 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { Link } from "react-router-dom";
 
 const CoursePage = () => {
+  const goBack = () => {
+    window.history.back();
+  };
+  const goForward = () => {
+    window.history.back();
+  };
+
   return (
     <section className="">
       <div className="sticky top-0 left-0 z-10 bg-slate-50 p-5 flex justify-between items-center mb-5">
