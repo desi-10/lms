@@ -1,6 +1,8 @@
 <?php
 // use App\Database;
+    
     declare(strict_types=1);
+    require("api_access.php");
     require("autoload.php");
 
     use App\Controller\ResponseController;

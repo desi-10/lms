@@ -52,9 +52,23 @@
                 case "DELETE":
                         $results = $object->delete($id);
                         break;
+                case "POST":
+                    //usually for user logins
+                    if(strtolower($id) === "login"){
+                        $data = !empty($_POST) ? $_POST : $this->getInputs();
+                        $_POST = $data;
+                        $results = $object->login();
+
+                        $success = $results === true ? true : false;
+                        
+                    }else{
+                        http_response_code(405);
+                        header("Allow: GET, PATCH, DELETE");
+                    }
+                    
                 default:
                     http_response_code(405);
-                    header("Allow: GET, PATCH, DELETE");
+                    header("Allow: GET, PATCH, DELETE, POST");
             }
 
             echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
@@ -77,7 +91,7 @@
     
                     break;
                 case "POST":
-                    $data = $_POST;
+                    $data = !empty($_POST) ? $_POST : $this->getInputs();
                     $results = $object->create($data);
 
                     if($results === true){
@@ -87,7 +101,6 @@
                         $success = false;
                     }
                     $results = $this->database->status();
-                    
                     break;
                 default:
                     http_response_code(405);
@@ -110,6 +123,8 @@
                     $input = explode("=",$input);
                     $data[$input[0]] = str_replace(["+"], [" "], $input[1]);
                 }
+            }if(str_contains($inputs, ":")){
+                $data = (array) json_decode($inputs);
             }
             
 
