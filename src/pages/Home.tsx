@@ -1,6 +1,29 @@
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+type ICourses = {
+  id: number;
+  course_name: string;
+  course_alise: string;
+  instructor_id: string;
+};
+
 const Home = () => {
+  const [_couses, setCourses] = useState<ICourses | []>([]);
+
+  const getAllCourses = async () => {
+    try {
+      const { data } = await axios("http://localhost:8080");
+      setCourses(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getAllCourses();
+  }, []);
   return (
     <section className="p-5 mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-center">
       <div className="group w-[90%] lg:w-52 mx-auto lg:mx-0 border rounded-lg border-slate-300 cursor-pointer">

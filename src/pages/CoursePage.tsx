@@ -1,35 +1,15 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
 import { GoVideo } from "react-icons/go";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { Link } from "react-router-dom";
 
 const CoursePage = () => {
-
-  const [_couses, setCourses] = useState([]);
-
-  const getAllCourses = async () => {
-    try {
-      const { data } = await axios("http://localhost:8080");
-      setCourses(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    getAllCourses();
-  }, []);
-
-
   const goBack = () => {
     window.history.back();
   };
-
   const goForward = () => {
-    window.history.forward();
+    window.history.back();
   };
-  
+
   return (
     <section className="">
       <div className="sticky top-0 left-0 z-10 bg-slate-50 p-5 flex justify-between items-center mb-5">
