@@ -1,0 +1,38 @@
+These are the methods used for the endpoints
+
+The API identifies the following items
+    - user
+    - course
+    - student
+    - instructor
+In this readme file, "identifier" is used in place of any of these
+
+That is to say, you would have to use something like /api/identifier to make requests
+
+| GET REQUESTS
+To get all details from any of the above items, use the GET method and the url should be in the following format
+    /api/identifier
+
+To get a specific item, use /api/identifier/key
+For the case of students, you can use /api/student/id or /api/student/index_number and it would work
+
+
+| POST REQUESTS
+Use "POST REQUESTS" to create an item. It uses the endpoint format
+    /api/identifier/
+
+
+| PATCH REQUESTS
+Use the "PATCH REQUEST" to update an item. It goes in the endpoint format /api/identifier/key
+
+
+| DELETE REQUESTS
+Use the "DELETE REQUEST" method to delete an item from the table. It goes with the endpoint format /api/identifier/key
+
+
+Responses are received in the format
+{
+        "success": bool,
+        "results": array|string|bool,
+        "message": string
+}
