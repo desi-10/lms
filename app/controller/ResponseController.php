@@ -31,6 +31,7 @@
             $success = false;
 
             if($object === false){
+                http_response_code(401);
                 $results = "authentication failed";
             }else{
                 switch($method){
@@ -62,21 +63,25 @@
                         //usually for user logins
                         if(strtolower($id) === "login"){
                             $data = !empty($_POST) ? $_POST : $this->getInputs();
-                            $_POST = $data;
-                            $results = $object->login();
-    
-                            if(is_array($results)){
-                                $results = str_replace("Token: ", "", $results);
-                                $success = true;
+                            if(!empty($data)){
+                                $_POST = $data;
+                                $results = $object->login();
+        
+                                if(is_array($results)){
+                                    $results = str_replace("Token: ", "", $results);
+                                    $success = true;
+                                }else{
+                                    http_response_code(404);
+                                    $success = false;
+                                }
                             }else{
-                                http_response_code(404);
-                                $success = false;
-
+                                $results = "Username or Password not set";
                             }
                             
                         }else{
                             http_response_code(405);
                             header("Allow: GET, PATCH, DELETE");
+                            $results = "Wrong request or request format identified";
                         }
                         break;
                     default:
@@ -138,7 +143,7 @@
                     $input = explode("=",$input);
                     $data[$input[0]] = str_replace(["+"], [" "], $input[1]);
                 }
-            }if(str_contains($inputs, ":")){
+            }elseif(str_contains($inputs, ":")){
                 $data = (array) json_decode($inputs);
             }
             
@@ -154,7 +159,7 @@
         private function authorize(string $class_name) :object|bool{
             $headers = getallheaders();
 
-            if(isset($headers["Authorization"])){
+            if(isset($headers["Authorization"]) && in_array($class_name, $this->authorize)){
                 //check user authentication
                 $response = $class_name::auth();
             }else{
