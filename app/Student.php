@@ -20,7 +20,6 @@
                     ]
                 ];
                 $this->setIndexNumber($index_number);
-                $this->class_table = "students";
         }
 
         public function getIndexNumber() :string{
@@ -70,10 +69,16 @@
 
                 //search the index number
                 $tables = $this->table;
-                $found_index = static::$connect->fetch("u.username",$tables,
-                    "s.index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
+                $column = "u.username";
+                $where = "s.index_number='$index_number'";
+                $no_result = "Student with index number '$index_number' not found";
+
+                $found_index = static::$connect->fetch($column,$tables,$where, no_results:$no_result);
                 
                 if(is_array($found_index)){
+                    //store index number
+                    $this->index_number = $index_number;
+
                     //pass username to parent to login
                     $_POST["username"] = $found_index[0]["username"];
                     $response = parent::login();
