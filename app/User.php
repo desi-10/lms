@@ -315,25 +315,20 @@
 
         protected function validate(array $data, string $mode) :string|bool{
             $response = true;
-            $general_keys = [
+            $keys = [
                 "lname" => ["last name", "string"],
                 "oname" => ["other name(s)", "string"],
                 "username" => ["username", "string"],
                 "user_role" => ["user role", "int"]
             ];
-            $update_keys = [
-                "id" => ["user identification number","int"]
-            ];
 
-            //general checks
-            $response = $this->check($data, $general_keys);
-            
             //update checks
             if(strtolower($mode) == "update"){
-                if($response === true){
-                    $response = $this->check($data, $update_keys);
-                }
+                $keys["id"] = ["user identification number","int"];
             }
+
+            //general checks
+            $response = $this->check($data, $keys);
 
             return $response;
         }
