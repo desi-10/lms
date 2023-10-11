@@ -15,7 +15,7 @@
         private bool $is_admin;
 
         public function __construct(private Database $db, 
-            private int $course_id = 0, private string $course_name = "",
+            private int $id = 0, private string $course_name = "",
             private string $course_alias = "", 
             private string $course_code = "", private int $instructor_id = 0
         ){
@@ -29,6 +29,13 @@
 
             //check user authentication
             $this->checkForAdmin();
+
+            //class attributes
+            static::$attributes = [
+                "id" => "int", "course_name" => "string",
+                "course_alias" => "string", "course_code" => "string",
+                "instructor_id" => "int", "program_id" => "int"
+            ];
         }
 
         /**
@@ -57,7 +64,7 @@
             if($this->is_admin){
                 if($this->checkInsert($details, static::$connect)){
                     //course name could be same as course alias if alias is not given
-                    $details["course_alias"] = !empty($details["course_alias"]) ? $details["course_alias"] : $details["course_name"];
+            $details["course_alias"] = $this->setDefault($details, "course_alias", $details["course_name"]);
                     
                     if(($response = $this->validate($details, "insert")) === true){
                         //make sure the user specified is an instructor
@@ -85,8 +92,16 @@
          * @return bool|string returns true if successful or an error string
          */
         public function update(array $details) :bool|string {
+            //make alias the same as the course name if its empty
+            $details["course_alias"] = $this->setDefault($details, "course_alias", $details["course_name"]);
+            
             if(($response = $this->validate($details, "update")) === true){
-                // if(($current_details = self::find()))
+                if(($current_details = self::find($details["id"]))){
+                    var_dump($current_details);
+                }else{
+                    $response = "Course was not found";
+                    self::$connect->setStatus($response, true);
+                }
             }
 
             return $response;
@@ -204,9 +219,9 @@
         public function data() :array|string{
             $response = "No course returned";
 
-            if($this->course_id > 0){
+            if($this->id > 0){
                 $response = [
-                    "id" => $this->course_id,
+                    "id" => $this->id,
                     "course_name" => $this->course_name,
                     "course_alias" => $this->course_alias,
                     "instructor_id" => $this->instructor_id
