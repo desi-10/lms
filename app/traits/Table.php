@@ -22,6 +22,9 @@ use App\Database;
         /** @var string[] $required_keys The necessary keys to be seen from input elements */
         protected array $required_keys;
 
+        /** @var string[] $attributes This is the attributes and their data types */
+        protected static array $attributes = [];
+
         /**
          * This function is used to set array values with default values if empty 
          * @param array $array The array to search through
@@ -170,5 +173,50 @@ use App\Database;
             }
 
             return $response;
+        }
+
+        /**
+         * Convert an array to suit the constructor
+         * @param array $search_results The data to be converted
+         * @return array The formated array
+         */
+        protected static function convertToConstruct(array $search_results) :array{
+            if(isset($search_results[0]) && is_array($search_results[0])){
+                $search_results = $search_results[0];
+            }
+
+            //attributes are in the format [key => type]
+            foreach(static::$attributes as $attribute => $data_type){
+                if(isset($search_results[$attribute])){
+                    $search_results[$attribute] = static::convertValue($search_results[$attribute], $data_type);
+                }
+            }
+
+            return $search_results;
+        }
+
+        /**
+         * This is used in connection with the convertoconstruct to format types of an attribute
+         * @param mixed $value This is the value passed
+         * @param string $data_type This is the datatype of the value
+         * @return mixed The formated value
+         */
+        private static function convertValue($value, string $data_type){
+            switch(strtolower($data_type)){
+                case "int":
+                    $value = (int) $value; break;
+                case "float":
+                    $value = (float) $value; break;
+                case "double":
+                    $value = (double) $value; break;
+                case "bool":
+                    $value = (bool) $value; break;
+                case "array":
+                    $value = (array) $value; break;
+                default:
+                    $value = (string) $value;
+            }
+
+            return $value;
         }
     }

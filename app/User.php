@@ -28,12 +28,17 @@
         }
 
         /**
-         * This function is used to set the validation keys
+         * This function is used to set the validation keys and also set up the class
          */
         protected function set_defaults(){
             $this->class_table = "users";
             $this->required_keys = [
                 "lname", "oname", "username", "user_role"
+            ];
+            static::$attributes = [
+                "id" => "int", "lname" => "string",
+                "oname" => "string", "username" => "string",
+                "user_role" => "int"
             ];
         }
 
@@ -292,17 +297,6 @@
             $response = is_array($response[0]) ? true : false;
             
             return $response;
-        }
-
-        private static function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
-            }
-
-            $search_results["id"] = intval($search_results["id"]);
-            $search_results["user_role"] = intval($search_results["user_role"]);
-
-            return $search_results;
         }
 
         /**

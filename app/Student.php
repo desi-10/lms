@@ -6,28 +6,38 @@
     class Student extends User
     {
         private string $index_number;
+        private int $level;
+        private int $program_id;
         
         public function __construct(Database $database, 
             int $user_id = 0, string $lname = '', 
             string $oname = '', string $username = '', int $user_role = 3,
-            string $index_number = ''){
+            string $index_number = '', int $level = 0, int $program_id = 0){
                 parent::__construct($database, $user_id, $lname, $oname, $username, $user_role);
-                $this->table = [
-                    [
-                        "join" => "users students", 
-                        "alias" => "u s", 
-                        "on" => "id user_id"
-                    ]
-                ];
-                $this->setIndexNumber($index_number);
+                $this->index_number = $index_number;
+                $this->level = $level;
+                $this->program_id = $program_id;
+        }
+
+        protected function set_defaults() :void{
+            //attributes of the class
+            self::$attributes = array_merge(parent::$attributes, [
+                "index_number" => "string", "user_id" => "int",
+                "level" => "int", "program_id" => "int"
+            ]);
+
+            //table for fetching data
+            $this->table = [
+                [
+                    "join" => "users students", 
+                    "alias" => "u s", 
+                    "on" => "id user_id"
+                ]
+            ];
         }
 
         public function getIndexNumber() :string{
             return $this->index_number;
-        }
-
-        public function setIndexNumber(string $value) :void{
-            $this->index_number = $value;
         }
 
         public function update(array $details) : string|bool{
@@ -102,6 +112,25 @@
             //add index number to response data
             if(is_array($response)){
                 $response["index_number"] = $this->index_number;
+                $response["level"] = $this->level;
+                $response["program_id"] = $this->program_id;
+            }
+
+            return $response;
+        }
+
+        /**
+         * This function is used to find the user's program
+         */
+        public function program() :string{
+            $response = "Program not found";
+
+            if($this->program_id > 0){
+                $response = Program::find($this->program_id);
+
+                if($response){
+                    $response = $response->data()["id"];
+                }
             }
 
             return $response;
