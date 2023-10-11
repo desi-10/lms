@@ -11,6 +11,15 @@ CREATE TABLE `elms`.`roles` (
     UNIQUE (`name`)
 ) ENGINE = InnoDB;
 
+-- Creating a table for the programs
+CREATE TABLE `elms`.`programs` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `alias` varchar (255) NULL,
+    `degree` enum('HND','BTECH') NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Creating the users table
 CREATE TABLE `elms`.`users` ( 
     `id` INT NOT NULL AUTO_INCREMENT , 
@@ -21,16 +30,19 @@ CREATE TABLE `elms`.`users` (
     PRIMARY KEY (`id`),
     UNIQUE (`username`),
     INDEX (`user_role`),
-    FOREIGN KEY (`user_role`) REFERENCES `elms`.`roles`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`user_role`) REFERENCES `elms`.`roles`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- creating the students reference table
 CREATE TABLE `elms`.`students` ( 
     `index_number` VARCHAR(15) NOT NULL , 
-    `user_id` INT NOT NULL , 
+    `user_id` INT NOT NULL ,
+    `level` INT NOT NULL,
+    `program_id` INT NOT NULL,
     PRIMARY KEY (`index_number`), 
     UNIQUE (`user_id`),
-    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`program_id`) REFERENCES `elms`.`programs`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating the user login table
@@ -50,7 +62,7 @@ CREATE TABLE `elms`.`activity` (
     `timestamp` DATETIME NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `activity_user` (`user_id`),
-    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- ----------------------------
@@ -65,11 +77,15 @@ CREATE TABLE `elms`.`activity` (
 CREATE TABLE `elms`.`courses` ( 
     `id` INT NOT NULL AUTO_INCREMENT , 
     `course_name` VARCHAR(255) NOT NULL , 
-    `course_alias` VARCHAR(255) NULL , 
-    `instructor_id` INT NOT NULL , 
+    `course_alias` VARCHAR(255) DEFAULT NULL , 
+    `course_code` VARCHAR(255) NOT NULL,
+    `instructor_id` INT NOT NULL ,
+    `program_id` INT NOT NULL,
     PRIMARY KEY (`id`),
-    Index (`instructor_id`),
-    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`)
+    Index (`instructor_id`,`program_id`),
+    UNIQUE (`course_code`),
+    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`program_id`) REFERENCES `elms`.`programs`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating the course materials table
@@ -78,7 +94,9 @@ CREATE TABLE `elms`.`coursematerials` (
     `course_id` INT NOT NULL , 
     `material_type` VARCHAR(255) NOT NULL , 
     `material_path` VARCHAR(255) NOT NULL , 
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    INDEX (`course_id`),
+    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- ------------------------------
@@ -92,18 +110,22 @@ CREATE TABLE `elms`.`coursematerials` (
 -- Creating the assignment table
 CREATE TABLE `elms`.`assignments` ( 
     `id` INT NOT NULL AUTO_INCREMENT , 
-    `course_id` INT NOT NULL , 
+    `course_id` INT NOT NULL ,
     `title` VARCHAR(80) NOT NULL , 
     `description` TEXT NOT NULL , 
     `instructor_id` INT NOT NULL , 
+    `program_id` INT NOT NULL ,
+    `program_level` INT NOT NULL ,
     `material_ids` VARCHAR(50) NULL , 
-    `start_date` DATETIME NOT NULL , 
+    `start_date` DATETIME NOT NULL DEFAULT NOW() , 
     `end_date` DATETIME NOT NULL , 
     `active` BOOLEAN NOT NULL DEFAULT FALSE , 
     PRIMARY KEY (`id`),
-    Index `assignments_idx_course_instructor` (`course_id`,`instructor_id`),
-    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`),
-    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`)
+
+    Index `assignments_idx_course_instructor_program` (`course_id`,`instructor_id`, `program_id`),
+    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`program_id`) REFERENCES `elms`.`programs`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating the quizzes table
@@ -113,13 +135,16 @@ CREATE TABLE `elms`.`quizzes` (
     `course_id` INT NOT NULL , 
     `title` VARCHAR(255) NOT NULL , 
     `description` TEXT NOT NULL , 
+    `program_id` INT NOT NULL ,
+    `program_level` INT NOT NULL ,
     `start_date` DATETIME NOT NULL , 
     `end_time` DATETIME NOT NULL , 
     `active` BOOLEAN NOT NULL DEFAULT FALSE , 
     PRIMARY KEY (`id`), 
-    INDEX `quizzes_idx_course_instructor` (`course_id`,`instructor_id`),
-    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`),
-    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`)
+    INDEX `quizzes_idx_course_instructor_program` (`course_id`,`instructor_id`, `program_id`),
+    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`program_id`) REFERENCES `elms`.`programs`(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating the questions table
@@ -154,7 +179,7 @@ CREATE TABLE `elms`.`submissions` (
     `content` TEXT NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `submissions_student` (`student_id`),
-    FOREIGN KEY (`student_id`) REFERENCES `elms`.`users`(`id`)
+    FOREIGN KEY (`student_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 CREATE TABLE `elms`.`grades` ( 
@@ -185,8 +210,8 @@ CREATE TABLE `elms`.`discussions` (
     `post_time` DATETIME NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `discussions_course_user` (`course_id`, `user_id`),
-    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`),
-    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`)
+    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 CREATE TABLE `elms`.`messages` ( 
@@ -197,8 +222,8 @@ CREATE TABLE `elms`.`messages` (
     `message_time` DATETIME NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `messages_user` (`sender_id`, `recepient_id`),
-    FOREIGN KEY (`sender_id`) REFERENCES `elms`.`users`(`id`),
-    FOREIGN KEY (`recepient_id`) REFERENCES `elms`.`users`(`id`)
+    FOREIGN KEY (`sender_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`recepient_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- --------------------------------------
@@ -220,8 +245,8 @@ CREATE TABLE `elms`.`videoconference` (
     `duration` DECIMAL(3,1) NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `video_course_instructor` (`course_id`, `instructor_id`),
-    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`),
-    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`)
+    FOREIGN KEY (`course_id`) REFERENCES `elms`.`courses`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`instructor_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating a participants table for the conference
@@ -231,8 +256,8 @@ CREATE TABLE `elms`.`participants` (
     `user_id` INT NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `participants_conf_user` (`conference_id`, `user_id`),
-    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`),
-    FOREIGN KEY (`conference_id`) REFERENCES `elms`.`videoconference`(`id`)
+    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE,
+    FOREIGN KEY (`conference_id`) REFERENCES `elms`.`videoconference`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- --------------------------
