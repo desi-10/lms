@@ -152,25 +152,19 @@
          */
         private function validate(array $data, string $mode) :bool|string{
             $response = false;
-            $general_keys = [
+            $keys = [
                 "course_name" => ["course name","string"],
                 "course_alias" => ["course alias", "string"],
                 "instructor_id" => ["instructor","int"]
             ];
-
-            $update_keys = [
-                "id" => ["course id", "int"]
-            ];
-
-            //general checks
-            $response = $this->check($data, $general_keys);
             
             //update checks
             if(strtolower($mode) == "update"){
-                if($response === true){
-                    $response = $this->check($data, $update_keys);
-                }
+                $keys["id"] = ["course id", "int"];
             }
+
+            //general checks
+            $response = $this->check($data, $keys);
 
             return $response;
         }
