@@ -28,7 +28,7 @@
             $this->required_keys = [ "course_name", "course_alias", "instructor_id" ];
 
             //check user authentication
-            $this->checkForAdmin();
+            Auth::authorize("admin");
 
             //class attributes
             static::$attributes = [
@@ -36,20 +36,6 @@
                 "course_alias" => "string", "course_code" => "string",
                 "instructor_id" => "int", "program_id" => "int"
             ];
-        }
-
-        /**
-         * Function to check user role
-         * @return void validates is_admin as true if user is an admin
-         */
-        private function checkForAdmin() :void{
-            $response  = User::auth();
-
-            if($response){
-                $this->is_admin = $response->role->is_admin;
-            }else{
-                $this->is_admin = false;
-            }
         }
 
         /**
@@ -61,27 +47,26 @@
             $response = false;
 
             //authenticate user first
-            if($this->is_admin){
-                if($this->checkInsert($details, static::$connect)){
-                    //course name could be same as course alias if alias is not given
-            $details["course_alias"] = $this->setDefault($details, "course_alias", $details["course_name"]);
-                    
-                    if(($response = $this->validate($details, "insert")) === true){
-                        //make sure the user specified is an instructor
-                        if($this->checkInstructor((int) $details["instructor_id"])){
-                            $response = self::$connect->insert($this->class_table, $details);
-                        }else{
-                            $response = "Selected user is not an instructor";
-                            self::$connect->setStatus($response, true);
-                        }
+            Auth::authorize("admin");
+            
+            if($this->checkInsert($details, static::$connect)){
+                //course name could be same as course alias if alias is not given
+                $details["course_alias"] = $this->setDefault($details, "course_alias", $details["course_name"]);
+                
+                if(($response = $this->validate($details, "insert")) === true){
+                    //make sure the user specified is an instructor
+                    if($this->checkInstructor((int) $details["instructor_id"])){
+                        $response = self::$connect->insert($this->class_table, $details);
                     }else{
-                        http_response_code(422);
-                        self::$connect->setStatus((string) $response, true);
+                        $response = "Selected user is not an instructor";
+                        self::$connect->setStatus($response, true);
                     }
+                }else{
+                    http_response_code(422);
+                    self::$connect->setStatus((string) $response, true);
                 }
-            }else{
-                self::$connect->setStatus("You are not authorized to create a course", true);
             }
+        
             
             return $response;
         }
