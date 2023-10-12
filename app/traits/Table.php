@@ -19,7 +19,7 @@ use App\Database;
         /** @var string $class_table The general table for a class */
         protected string $class_table;
 
-        /** @var string[] $required_keys The necessary keys to be seen from input elements */
+        /** @var string[] $required_keys The necessary keys to be seen from input elements usually for insertion */
         protected array $required_keys;
 
         /** @var string[] $attributes This is the attributes and their data types */
@@ -80,6 +80,13 @@ use App\Database;
          */
         protected function checkInsert(array $input_array, Database &$connect) :bool{
             $response = true;
+
+            //stop processing if there is actually no input
+            if(empty($input_array)){
+                $connect->setStatus("No processable input fields were provided", true);
+                return false;
+            }
+
             $keys = $this->makeKeys($input_array);
 
             //loop through input array for the value
@@ -218,5 +225,30 @@ use App\Database;
             }
 
             return $value;
+        }
+
+        /**
+         * This function is used to remove keys from an array and also can spit out the values or not
+         * @param array $array The array to be processed
+         * @param array $keys The keys to be removed
+         * @param bool $spit_values This is used to return an array of the values of the keys being removed
+         * @return null|array doesnt return any value by default, but array if spit_values is true
+         */
+        protected function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
+            $response = null;
+            $reserved_values = [];
+
+            foreach($keys as $key){
+                if(isset($array[$key])){
+                    //reserve the value and remove the value from the array
+                    $reserved_values[$key] = $array[$key];
+                    unset($array[$key]);
+                }
+            }
+
+            if($spit_values){
+                $response = $reserved_values;
+            }
+            return $response;
         }
     }
