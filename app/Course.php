@@ -28,7 +28,7 @@
             $this->required_keys = [ "course_name", "course_alias", "instructor_id" ];
 
             //check user authentication
-            Auth::authorize("admin");
+            Auth::authorize(["admin", "instructor"]);
 
             //class attributes
             static::$attributes = [
@@ -47,15 +47,15 @@
             $response = false;
 
             //authenticate user first
-            Auth::authorize("admin");
-            
+            Auth::authorize(["admin","instructor"]);
+
             if($this->checkInsert($details, static::$connect)){
                 //course name could be same as course alias if alias is not given
                 $details["course_alias"] = $this->setDefault($details, "course_alias", $details["course_name"]);
                 
                 if(($response = $this->validate($details, "insert")) === true){
                     //make sure the user specified is an instructor
-                    if($this->checkInstructor((int) $details["instructor_id"])){
+                    if(Auth::$instructor){
                         $response = self::$connect->insert($this->class_table, $details);
                     }else{
                         $response = "Selected user is not an instructor";
@@ -110,15 +110,6 @@
         }
 
         /**
-         * This function is used to find the details of a user
-         * @param int $user_id The id of the user
-         * @return User|bool returns a user or false if not found
-         */
-        private function findUser(int $user_id) :User|bool{
-            return User::find($user_id);
-        }
-
-        /**
          * Search for a course
          * @param string|int $course_id This is the id for the course
          * @return Course|bool returns a new course or false
@@ -151,19 +142,6 @@
             $search_results["id"] = (int) $search_results["id"];
 
             return $search_results;
-        }
-
-        /**
-         * This function is used to check if the user specified is an instructor in the system
-         * @param int $user_id The id of the user
-         * @return bool true if the user is an instructor and false if not
-         */
-        private function checkInstructor(int $user_id) :bool{
-            if($response = $this->findUser($user_id)){
-                $response = $response->role->is_instructor;
-            }
-
-            return $response;
         }
 
         /**
@@ -235,6 +213,7 @@
 
         /**
          * This is used to grab the full details of the instructor of this course
+         * @return Instructor|bool returns an instructor object or false if not found
          */
         public function instructor() :Instructor|bool{
             return $this->instructor_id > 0 ? 
