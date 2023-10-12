@@ -13,6 +13,9 @@
 
     header("Content-type: application/json");
 
+    //enable authorization
+    App\Auth::auth();
+
     $accepted = [
         "user","course","student", "instructor", "program"
     ];
