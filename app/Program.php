@@ -13,7 +13,7 @@
         private string $degree;
 
         public function __construct(Database $db = new Database,
-            private int $id = 0, private string $name = "", private string $alias = "", string $degree = ""
+            private int $id = 0, private string $name = "", private ?string $alias = null, string $degree = ""
         ){
             self::$connect = $db;
             
@@ -26,6 +26,12 @@
                 "id" => "int", "name" => "string", 
                 "alias" => "string", "degree" => "string"
             ];
+
+            $this->required_keys = [
+                "name", "alias", "degree"
+            ];
+
+            $this->class_table = "programs";
         }
 
         private function setDegree($value){
@@ -56,9 +62,10 @@
          * @return self|bool returns a new course or false
          */
         public static function find(string|int $program_id) :self|bool{
+            $instance = new self(new Database);
             $column = "*"; $where = ["id=$program_id"]; $table = "programs";
 
-            $search = static::$connect->fetch($column, $table, $where);
+            $search = self::$connect->fetch($column, $table, $where);
 
             if(is_array($search)){
                 $search = self::convertToConstruct($search);
@@ -86,14 +93,58 @@
         }
 
         /**
-         * This function creates a new course
+         * This function creates a new program
          * @param array $details The details to be sent into the database
          * @return bool True for a successful create and error string for a fail
          */
         public function create(array $details) :bool|string{
             $response = false;
+            // Auth::authorize("admin");
 
+            if($this->checkInsert($details, self::$connect)){
+                if(($response = $this->validate($details, "insert")) === true){
+                    //check if the degree is valid
+                    if(in_array(strtoupper($details["degree"]), $this->degrees)){
+                        if(!$this->programExists($details)){
+                            //parse the data into the database
+                            $response = self::$connect->insert("programs", $details);
+                        }else{
+                            http_response_code(422);
+                            $response = "This program has already been added";
+                            self::$connect->setStatus($response, true);
+                        }
+                    }else{
+                        http_response_code(422);
+                        $response = "Your degree '{$details['degree']}' specified is not valid";
+                        self::$connect->setStatus($response, true);
+                    }
+                }else{
+                    http_response_code(422);
+                    self::$connect->setStatus($response, true);
+                }
+            }else{
+                http_response_code(422);
+                $response = static::$connect->status();
+            }
+            
             return $response;
+        }
+
+        /**
+         * This is used to check if a record is already inserted or not
+         * @param string[] $details the details to be used for checking
+         * @return bool true if found and false if not found
+         */
+        private function programExists(array $details){
+            //check using the id if its in
+            if(!empty($details["id"])){
+                $response = self::$connect->fetch("*", $this->class_table, "id={$details['id']}");
+            }else{
+                $response = self::$connect->fetch("*", $this->class_table, 
+                    ["name='{$details['name']}'", "degree='{$details['degree']}'"], "AND");
+            }
+
+            return is_array($response) ? true : false;
         }
 
         /**
@@ -103,6 +154,23 @@
          */
         public function update(array $details) :bool|string{
             $response = false;
+
+            // Auth::authorize(["admin"]);
+            if(($response = $this->validate($details, "update")) === true){
+                //grab current details
+                if($current = self::find($details["id"])){
+                    $current = $current->data();
+
+                    //update programs table
+                    if($this->programExists($details)){
+                        if($response = self::$connect->update($current, $details, $this->class_table, ["id"]) === true){
+                            $response = "Program was updated";
+                        }
+                    }
+                }else{
+                    $response = "Course could not be found";
+                }
+            }
 
             return $response;
         }
@@ -133,6 +201,27 @@
                     "degree" => $this->degree
                 ];
             }
+
+            return $response;
+        }
+
+        /**
+         * This function is used to validate input data
+         * @param array $data The data to be processed
+         * @param string $mode The mode of the request
+         * @return string|bool returns true if everything is fine or string of error
+         */
+        private function validate(array $data, string $mode) :bool|string{
+            $general = [
+                "name" => ["program name", "string"],
+                "degree" => ["degree", "string"]
+            ];
+
+            if($mode == "update"){
+                $general["id"] = ["program id", "int"];
+            }
+
+            $response = $this->check($data, $general);
 
             return $response;
         }
