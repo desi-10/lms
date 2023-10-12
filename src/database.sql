@@ -50,7 +50,8 @@ CREATE TABLE `elms`.`userlogin` (
     `user_id` INT NOT NULL , 
     `username` VARCHAR(60) NOT NULL , 
     `password` VARCHAR(120) NOT NULL,
-    PRIMARY KEY (`user_id`)
+    PRIMARY KEY (`user_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating the user activity log table

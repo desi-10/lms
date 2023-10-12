@@ -28,6 +28,7 @@
          */
         private function processResource(string $method, string $class_name, string $id){
             $object = new $class_name($this->database);
+            $success = false;
             
             switch($method){
                 case "GET":

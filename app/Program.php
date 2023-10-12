@@ -99,7 +99,7 @@
          */
         public function create(array $details) :bool|string{
             $response = false;
-            // Auth::authorize("admin");
+            Auth::authorize("admin");
 
             if($this->checkInsert($details, self::$connect)){
                 if(($response = $this->validate($details, "insert")) === true){
@@ -155,7 +155,7 @@
         public function update(array $details) :bool|string{
             $response = false;
 
-            // Auth::authorize(["admin"]);
+            Auth::authorize(["admin"]);
             if(($response = $this->validate($details, "update")) === true){
                 //grab current details
                 if($current = self::find($details["id"])){

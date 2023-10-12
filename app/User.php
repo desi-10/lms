@@ -337,7 +337,6 @@
             $response = static::$connect->delete("users", "id=$user_id");
 
             if($response){
-                static::$connect->delete("userlogin","user_id=$user_id");
                 static::$connect->setStatus("User '$user_id' record deleted", true);
             }else{
                 static::$connect->setStatus("User '$user_id' record could not be deleted", true);
