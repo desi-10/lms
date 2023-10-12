@@ -72,4 +72,16 @@
 
             return $response;
         }
+
+        /**
+         * This function is used to validate input data
+         * @param array $data The data to be processed
+         * @param string $mode The mode of the request
+         * @return string|bool returns true if everything is fine or string of error
+         */
+         protected function validate(array $data, string $mode) :string|bool{
+            $response = true;
+
+            return $response;
+         }
     }
