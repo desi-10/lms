@@ -27,68 +27,61 @@
          * This function is used to get a single result from the database
          */
         private function processResource(string $method, string $class_name, string $id){
-            $object = $this->authorize($class_name);
-            $success = false;
+            $object = new $class_name($this->database);
+            
+            switch($method){
+                case "GET":
+                    $results = $object::find($id);
+                    
+                    if($results !== false){
+                        $success = true;
+                        $results = $results->data();
+                    }else{
+                        http_response_code(404);
+                        $results = "No results were found";
+                    }
 
-            if($object === false){
-                http_response_code(401);
-                $results = "authentication failed";
-            }else{
-                switch($method){
-                    case "GET":
-                        $results = $object::find($id);
-                        
-                        if($results !== false){
-                            $success = true;
-                            $results = $results->data();
-                        }else{
-                            http_response_code(404);
-                            $results = "No results were found";
-                        }
-    
+                    break;
+                case "PATCH":
+                    $data = $this->getInputs();
+
+                    //insert the id if it is not provided
+                    $data["id"] = $data["id"] ?? $id;
+
+                    $results = $object->update($data);
+                    break;
+                case "DELETE":
+                        $results = $object->delete($id);
+                        http_response_code(204);
                         break;
-                    case "PATCH":
-                        // $results = $_REQUEST;
-                        $data = $this->getInputs();
+                case "POST":
+                    //usually for user logins
+                    if(strtolower($id) === "login"){
+                        $data = !empty($_POST) ? $_POST : $this->getInputs();
+                        if(!empty($data)){
+                            $_POST = $data;
+                            $results = $object->login();
     
-                        //insert the id if it is not provided
-                        $data["id"] = $data["id"] ?? $id;
-    
-                        $results = $object->update($data);
-                        break;
-                    case "DELETE":
-                            $results = $object->delete($id);
-                            break;
-                    case "POST":
-                        //usually for user logins
-                        if(strtolower($id) === "login"){
-                            $data = !empty($_POST) ? $_POST : $this->getInputs();
-                            if(!empty($data)){
-                                $_POST = $data;
-                                $results = $object->login();
-        
-                                if(is_array($results)){
-                                    $results = str_replace("Token: ", "", $results);
-                                    $success = true;
-                                }else{
-                                    http_response_code(404);
-                                    $success = false;
-                                }
+                            if(is_array($results)){
+                                $results = str_replace("Token: ", "", $results);
+                                $success = true;
                             }else{
-                                $results = "Username or Password not set";
+                                http_response_code(401);
+                                $success = false;
                             }
-                            
                         }else{
-                            http_response_code(405);
-                            header("Allow: GET, PATCH, DELETE");
-                            $results = "Wrong request or request format identified";
+                            $results = "Username or Password not set";
                         }
-                        break;
-                    default:
+                        
+                    }else{
                         http_response_code(405);
-                        header("Allow: GET, PATCH, DELETE, POST");
-                }
-
+                        header("Allow: GET, PATCH, DELETE");
+                        $results = "Wrong request or request format identified";
+                    }
+                    break;
+                default:
+                    http_response_code(405);
+                    header("Allow: GET, PATCH, DELETE, POST");
             }
 
             echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
@@ -149,23 +142,5 @@
             
 
             return $data;
-        }
-        
-        /**
-         * This function checks if authorization is required to access certain details
-         * @param string $class_name The name of the class
-         * @return object|bool Returns an object of a class 
-         */
-        private function authorize(string $class_name) :object|bool{
-            $headers = getallheaders();
-
-            if(isset($headers["Authorization"]) && in_array($class_name, $this->authorize)){
-                //check user authentication
-                $response = $class_name::auth();
-            }else{
-                $response = new $class_name($this->database);
-            }
-
-            return $response;
         }
     }
