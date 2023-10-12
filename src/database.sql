@@ -267,3 +267,7 @@ CREATE TABLE `elms`.`participants` (
 
 -- Parse user roles into the users table
 INSERT INTO `elms`.`roles` (`name`) VALUES ("admin"), ("instructor"), ("student");
+
+-- Parse the admin into the users table
+INSERT INTO `elms`.`users` (`lname`,`oname`,`username`, `user_role`) VALUES ("Admin", "System", "admin", 1);
+INSERT INTO `elms`.`userlogin` (`user_id`,`username`,`password`) VALUES (1, "admin", "$2y$10$MLr5NVbwnIhZMKCGz7L6Bu/NL9bx.P7m4g44bcTmNTFXkEmpSJtpO");
