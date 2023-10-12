@@ -27,6 +27,14 @@
             $this->set_defaults();
         }
 
+        public function getID(){
+            return $this->user_id;
+        }
+
+        public function getRole(){
+            return $this->user_role;
+        }
+
         /**
          * This function is used to set the validation keys and also set up the class
          */

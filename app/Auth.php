@@ -18,11 +18,7 @@
         }
 
         public static function auth(){
-            $auth_classes = ["user","student","instructor"];
-            $class = static::getClass();
-            $obj = "\App\\$class";
-
-            if(in_array($class, $auth_classes) && (static::$user = $obj::auth())){
+            if((static::$user = User::auth())){
                 static::$admin = static::$user->role->is_admin;
                 static::$student = static::$user->role->is_student;
                 static::$instructor = static::$user->role->is_instructor;
