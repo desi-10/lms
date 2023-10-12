@@ -25,7 +25,7 @@
 
         private function set_defaults(){
             $this->class_table = "courses";
-            $this->required_keys = [ "course_name", "course_alias", "instructor_id" ];
+            $this->required_keys = [ "course_name", "instructor_id", "course_code", "program_id" ];
 
             //check user authentication
             Auth::authorize(["admin", "instructor"]);
@@ -55,7 +55,7 @@
                 
                 if(($response = $this->validate($details, "insert")) === true){
                     //make sure the user specified is an instructor
-                    if(Auth::$instructor){
+                    if(Instructor::find((int) $details["instructor_id"]) || Auth::$admin){
                         $response = self::$connect->insert($this->class_table, $details);
                     }else{
                         $response = "Selected user is not an instructor";
@@ -130,21 +130,6 @@
         }
 
         /**
-         * Convert an array to suit the constructor
-         * @param array $search_results The data to be converted
-         * @return array The formated array
-         */
-        private static function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
-            }
-
-            $search_results["id"] = (int) $search_results["id"];
-
-            return $search_results;
-        }
-
-        /**
          * This function is used to validated the input data
          * @param array $data The data to be validated
          * @param string $mode The mode of validation
@@ -154,8 +139,9 @@
             $response = false;
             $keys = [
                 "course_name" => ["course name","string"],
-                "course_alias" => ["course alias", "string"],
-                "instructor_id" => ["instructor","int"]
+                "instructor_id" => ["instructor","int"],
+                "program_id" => ["program name","int"],
+                "course_code" => ["course code","string"],
             ];
             
             //update checks
