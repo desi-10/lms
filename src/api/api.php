@@ -13,9 +13,13 @@
 
     header("Content-type: application/json");
 
+    //enable authorization
+    App\Auth::auth();
+
     $accepted = [
-        "user","course","student", "instructor"
+        "user","course","student", "instructor", "program"
     ];
+    
     $parts = explode("/",$_SERVER["REQUEST_URI"]);
 
     //remove any leading string and start with api/
@@ -23,7 +27,7 @@
         $parts = array_splice($parts, array_search("api", $parts)+1);
     }
     
-    if(array_search($parts[0], $accepted) === false){
+    if(in_array($parts[0], $accepted) === false){
         http_response_code(404);
         exit(1);
     }

@@ -11,28 +11,43 @@
         /** @var Database $connect This is a static database connection */
         protected static Database $connect;
 
-        /** @var string[] $table_keys The necessary keys to be seen from input elements */
-        protected array $table_keys = [
-            "lname", "oname", "username", "user_role"
-        ];
-
         /** @var bool $loggedIn takes the status of the user's login  */
         public static bool $loggedIn;
+
+        /** @var Roles $role Returns a whole data of the user role */
+        public Roles $role;
         
         public function __construct(
             Database $database,
             protected int $user_id = 0, protected string $lname = "", protected string $oname = "",
             protected string $username = "", protected int $user_role = 0
         ){
-            $this->user_id = $user_id;
-            $this->lname = $lname;
-            $this->oname = $oname;
-            $this->username = $username;
-            $this->user_role = $user_role;
-
             static::$connect = $database;
             self::$loggedIn = false;
+            $this->set_defaults();
+        }
+
+        public function getID(){
+            return $this->user_id;
+        }
+
+        public function getRole(){
+            return $this->user_role;
+        }
+
+        /**
+         * This function is used to set the validation keys and also set up the class
+         */
+        protected function set_defaults(){
             $this->class_table = "users";
+            $this->required_keys = [
+                "lname", "oname", "username", "user_role"
+            ];
+            static::$attributes = [
+                "id" => "int", "lname" => "string",
+                "oname" => "string", "username" => "string",
+                "user_role" => "int"
+            ];
         }
 
         public function data() :array|string{
@@ -66,11 +81,11 @@
                     static::$connect->setStatus($response, true);
                 }else{
                     static::$connect->setStatus("'$username' is signed in", true);
-                    $id = (int) static::$connect->fetch("id","users","username='$username'")[0]["id"];
+                    static::$loggedIn = true;
                     
                     //send user data and user token
-                    $response = static::find($id)->data();
-                    $response["token"] = $this->generateToken($id);
+                    $response = $this->data();
+                    $response["token"] = $this->generateToken($this->user_id);
                 }
             }else{
                 $response = "Username '$username' not found. Please check and try again";
@@ -82,28 +97,43 @@
 
         /**
          * This function provides the details of the current signed in user
-         * @return static|array|bool returns the data of the current logged in user or false if there is none
+         * @return static|bool returns the data of the current logged in user or false if there is none
          */
-        public static function auth() :static|array|string|bool{
+        public static function auth() :static|bool{
             $response = false;
             
             $headers = getallheaders();
 
             //check for a header called authorization
             if(isset($headers["Authorization"])){
-                //remove bearer
+                //remove bearer if there is any
                 $token = str_replace("Bearer","", $headers["Authorization"]);
                 $decoded = static::decode($token);
 
-                if(is_array($decoded)){
-                    $response = static::find($decoded["user_id"]);
-                    // $response = $decoded;
+                if(str_contains($decoded, ".")){
+                    $user_id = (int) explode(".",$decoded)[0];
+                    $response = static::find($user_id);
+
+                    //mark that this user is logged in and set up the roles
+                    if($response !== false){
+                        $response::$loggedIn = true; 
+                        $response->role = $response->create_role($response);
+                    }
                 }else{
-                    $response = "Error: $decoded";
+                    $response = false;
                 }
             }
 
             return $response;
+        }
+
+        /**
+         * This creates a new role object for the class
+         * @param self $object The class instance to make modifications of
+         * @return Roles Returns a roles object
+         */
+        private function create_role(self $object) :Roles{
+            return Roles::find($object->user_role, static::$connect);
         }
 
         /**
@@ -118,7 +148,7 @@
             }
 
             //check if the necessary fields are present            
-            if($this->checkInsert($details)){
+            if($this->checkInsert($details, static::$connect)){
                 if(($response = $this->validate($details, "insert")) === true){
                     $response = static::$connect->insert("users", $details);
 
@@ -154,9 +184,16 @@
                 //grab user details
                 if(($current_details = static::find($details["id"]))!==false){
                     $current_details = $current_details->data();
-
+                    
                     //change any user_id to id
                     $this->replaceKey($current_details, "user_id", "id");
+
+                    //remove password key if it exists in details
+                    $password = null;
+                    if(isset($details["password"])){
+                        $password = $details["password"];
+                        unset($details["password"]);
+                    }
 
                     //update user table
                     if(($response = static::$connect->update($current_details, 
@@ -164,7 +201,8 @@
                         //update the logins table
                         $login_details = [
                             "user_id" => $current_details["id"],
-                            "username" => $current_details["username"]
+                            "username" => $current_details["username"],
+                            "password" => $password
                         ];
 
                         $response = $this->updateLogins($login_details);
@@ -197,7 +235,7 @@
 
                 $response = static::$connect->update($user, $user_data, "userlogin", ["user_id"]);
             }else{
-                $response = "User not found";
+                $response = "User login details not found";
             }
             
             return $response;
@@ -212,27 +250,6 @@
             }
 
             return $response;
-        }
-
-        protected function checkInsert(array $input_array) :bool{
-            $response = true;
-            $keys = $this->makeKeys($input_array);
-
-            //loop through input array for the value
-            foreach($keys as $key){
-                if(array_search($key, $this->table_keys) === false){
-                    $response = false;
-                    static::$connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
-                    break;
-                }
-            }
-            
-            return $response;
-        }
-
-        private function makeKeys(array $data) :array{
-            return array_key_exists(0,$data) ? 
-                    $data : array_keys($data);
         }
 
         public function logs() :array{
@@ -253,8 +270,11 @@
 
             if(is_array($search)){
                 //create a new instance of the user
-                $search = $instance->convertToConstruct($search);
+                $search = static::convertToConstruct($search);
                 $user = new static(static::$connect, ...array_values($search));
+
+                //set the user role
+                $user->role = $user->create_role($user);
             }else{
                 $search = $search !== false ? $search : "User was not found";
                 static::$connect->setStatus($search, true);
@@ -266,21 +286,25 @@
         }
 
         private function checkUsername($username) :bool{
-            $response = static::$connect->fetch("id","users","username='$username'");
-            $response = is_array($response[0]) ? true : false;
+            $response = static::$connect->fetch("*","users","username='$username'");
 
-            return $response;
-        }
+            //pass user details as current user for class
+            if(is_array($response[0])){
+                $user = $response[0];
 
-        private function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
+                $this->user_id = (int) $user["id"];
+                $this->lname = $user["lname"];
+                $this->oname = $user["oname"];
+                $this->username = $user["username"];
+                $this->user_role = (int) $user["user_role"];
+
+                static::$connect->setStatus("Marked '$username' as current user", true);
             }
 
-            $search_results["id"] = intval($search_results["id"]);
-            $search_results["user_role"] = intval($search_results["user_role"]);
-
-            return $search_results;
+            //based on results, tell if user was found or not
+            $response = is_array($response[0]) ? true : false;
+            
+            return $response;
         }
 
         /**
@@ -299,25 +323,20 @@
 
         protected function validate(array $data, string $mode) :string|bool{
             $response = true;
+            $keys = [
+                "lname" => ["last name", "string"],
+                "oname" => ["other name(s)", "string"],
+                "username" => ["username", "string"],
+                "user_role" => ["user role", "int"]
+            ];
+
+            //update checks
+            if(strtolower($mode) == "update"){
+                $keys["id"] = ["user identification number","int"];
+            }
 
             //general checks
-            if(empty($data["lname"]) || is_null($data["lname"])){
-                $response = "No last name was provided";
-            }elseif(empty($data["oname"]) || is_null($data["oname"])){
-                $response = "No other name(s) provided";
-            }elseif(empty($data["username"]) || is_null($data["username"])){
-                $response = "No username was provided";
-            }elseif(empty($data["user_role"]) || is_null($data["user_role"])){
-                $response = "User role was not specified";
-            }elseif(ctype_digit($data["user_role"]) === false || $data["user_role"] < 1){
-                $response = "User role provided is invalid";
-            }
-            
-            if(strtolower($mode) == "update"){
-                if(empty($data["id"]) || is_null($data["id"])){
-                    $response = "User was not specified";
-                }
-            }
+            $response = $this->check($data, $keys);
 
             return $response;
         }
@@ -326,12 +345,15 @@
             $response = static::$connect->delete("users", "id=$user_id");
 
             if($response){
-                static::$connect->delete("userlogin","user_id=$user_id");
                 static::$connect->setStatus("User '$user_id' record deleted", true);
             }else{
                 static::$connect->setStatus("User '$user_id' record could not be deleted", true);
             }
             
             return $response;
+        }
+
+        public function courses(){
+            
         }
     }

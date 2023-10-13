@@ -6,29 +6,40 @@
     class Student extends User
     {
         private string $index_number;
+        private int $level;
+        private int $program_id;
         
         public function __construct(Database $database, 
             int $user_id = 0, string $lname = '', 
             string $oname = '', string $username = '', int $user_role = 3,
-            string $index_number = ''){
+            string $index_number = '', int $level = 0, int $program_id = 0){
                 parent::__construct($database, $user_id, $lname, $oname, $username, $user_role);
-                $this->table = [
-                    [
-                        "join" => "users students", 
-                        "alias" => "u s", 
-                        "on" => "id user_id"
-                    ]
-                ];
-                $this->setIndexNumber($index_number);
-                $this->class_table = "students";
+                $this->index_number = $index_number;
+                $this->level = $level;
+                $this->program_id = $program_id;
+
+                $this->set_defaults();
+        }
+
+        protected function set_defaults() :void{
+            //attributes of the class
+            self::$attributes = array_merge(parent::$attributes, [
+                "index_number" => "string", "user_id" => "int",
+                "level" => "int", "program_id" => "int"
+            ]);
+
+            //table for fetching data
+            $this->table = [
+                [
+                    "join" => "users students", 
+                    "alias" => "u s", 
+                    "on" => "id user_id"
+                ]
+            ];
         }
 
         public function getIndexNumber() :string{
             return $this->index_number;
-        }
-
-        public function setIndexNumber(string $value) :void{
-            $this->index_number = $value;
         }
 
         public function update(array $details) : string|bool{
@@ -70,10 +81,16 @@
 
                 //search the index number
                 $tables = $this->table;
-                $found_index = static::$connect->fetch("u.username",$tables,
-                    "s.index_number='$index_number'", no_results:"Student with index number '$index_number' not found");
+                $column = "u.username";
+                $where = "s.index_number='$index_number'";
+                $no_result = "Student with index number '$index_number' not found";
+
+                $found_index = static::$connect->fetch($column,$tables,$where, no_results:$no_result);
                 
                 if(is_array($found_index)){
+                    //store index number
+                    $this->index_number = $index_number;
+
                     //pass username to parent to login
                     $_POST["username"] = $found_index[0]["username"];
                     $response = parent::login();
@@ -97,6 +114,25 @@
             //add index number to response data
             if(is_array($response)){
                 $response["index_number"] = $this->index_number;
+                $response["level"] = $this->level;
+                $response["program_id"] = $this->program_id;
+            }
+
+            return $response;
+        }
+
+        /**
+         * This function is used to find the user's program
+         */
+        public function program() :string{
+            $response = "Program not found";
+
+            if($this->program_id > 0){
+                $response = Program::find($this->program_id);
+
+                if($response){
+                    $response = $response->data()["id"];
+                }
             }
 
             return $response;
@@ -104,7 +140,7 @@
 
         public static function find(int|string $user_id, $table = []) :static|false{
             $table = [
-                "columns" => "u.*, s.index_number",
+                "columns" => "u.*, s.index_number, s.level, s.program_id",
                 "tables" => [
                     [
                         "join" => "users students", 
@@ -131,20 +167,41 @@
                 unset($details["index_number"]);
             }
 
-            //username should be the specified username or the index number
-            $details["username"] = $this->setDefault($details, "username", $index_number);
+            //check for level and program then remove
+            list("level"=>$level, "program_id"=>$program_id) = $this->removeKeys($details, ["level","program_id"]);
 
-            //parse user info to users table
-            $response = parent::create($details);
+            //check the program
+            if($this->checkProgram((int) $program_id)){
+                //username should be the specified username or the index number
+                $details["username"] = $this->setDefault($details, "username", $index_number);
 
-            //parse user into students table
-            if($response === true){
-                $student_data = [
-                    "user_id" => $this->user_id,
-                    "index_number" => $index_number
-                ];
+                //parse user info to users table
+                $response = parent::create($details);
 
-                $response = static::$connect->insert("students", $student_data);
+                //parse user into students table
+                if($response === true){
+                    $student_data = [
+                        "user_id" => $this->user_id,
+                        "index_number" => $index_number,
+                        "program_id" => $program_id,
+                        "level" => $level
+                    ];
+
+                    $response = static::$connect->insert("students", $student_data);
+                }
+            }else{
+                $response = "Program was not found or is not defined";
+                static::$connect->setStatus($response, true);
+            }
+
+            return $response;
+        }
+
+        private function checkProgram(int $program_id){
+            $response = (bool) Program::find($program_id);
+
+            if(!$response){
+                static::$connect->setStatus("Program '$program_id' does not exist", true);
             }
 
             return $response;
@@ -192,13 +249,23 @@
 
         protected function validate(array $data, string $mode) :bool|string{
             $response = true;
+            $student_check = [
+                "index_number" => ["index number","string"],
+                "program_id" => ["program", "int"],
+                "level" => ["program level", "int"]
+            ];
 
-            //check if there is an index_number
-            if($this->class_table == "student" && (empty($data["index_number"]) || is_null($data["index_number"]))){
-                $response = "No index number value provided";
-            }else{
+            //check if there are valid data
+            if($this->class_table == "student"){
+                $response = $this->check($data, $student_check);
+            }
+
+            //validate other keys
+            if($response === true){
                 $response = parent::validate($data, $mode);
             }
+
+            static::$connect->setStatus($response); $response = false;
 
             return $response;
         }
