@@ -25,7 +25,7 @@
 
         private function set_defaults(){
             $this->class_table = "courses";
-            $this->required_keys = [ "course_name", "instructor_id", "course_code", "program_id" ];
+            $this->required_keys = [ "course_name", "course_alias" "instructor_id", "course_code", "program_id" ];
 
             //check user authentication
             Auth::authorize(["admin", "instructor"]);
