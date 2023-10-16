@@ -10,6 +10,7 @@
         private string $index_number;
         private int $level;
         private int $program_id;
+        private const program_levels = [100, 200, 300, 400];
         
         public function __construct(Database $database, 
             int $user_id = 0, string $lname = '', 
@@ -189,7 +190,7 @@
                 if(empty($level)){
                     $response = "Program level was not provided";
                     static::$connect->setStatus($response, true);
-                }elseif(!in_array($level, [100,200,300,400])){
+                }elseif(!in_array($level, self::program_levels)){
                     $response = "Program level does not match the desired program levels";
                     static::$connect->setStatus($response, true);
                 }else{
