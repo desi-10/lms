@@ -5,6 +5,8 @@ The API identifies the following items
     - course
     - student
     - instructor
+    - program
+    - quiz
 In this readme file, "identifier" is used in place of any of these
 
 That is to say, you would have to use something like /api/identifier to make requests
