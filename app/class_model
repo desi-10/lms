@@ -7,6 +7,16 @@
 
         public function __construct(Database $db = new Database){
             self::$connect = $db;
+            $this->set_defaults();
+        }
+
+        /**
+         * This function is used to set the validation keys and also set up the class
+         */
+        protected function set_defaults(){
+            $this->class_table = "";
+            $this->required_keys = [];
+            static::$attributes = [];
         }
 
         /**
@@ -79,8 +89,18 @@
          * @param string $mode The mode of the request
          * @return string|bool returns true if everything is fine or string of error
          */
-         protected function validate(array $data, string $mode) :string|bool{
+        protected function validate(array $data, string $mode) :string|bool{
             $response = true;
+
+            $keys = [
+                "key" => ["visual name", "data_type"]
+            ];
+
+            if($mode == "update"){
+                $keys["id"] = ["item id", "int"];
+            }
+
+            $response = $this->check($data, $keys);
 
             return $response;
          }
