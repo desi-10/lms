@@ -87,13 +87,11 @@ use App\Database;
                 return false;
             }
 
-            $keys = $this->makeKeys($input_array);
-
-            //loop through input array for the value
-            foreach($keys as $key){
-                if(!in_array($key, $this->required_keys)){
+            //make sure required keys are available
+            foreach($this->required_keys as $key){
+                if(!isset($input_array[$key])){
                     $response = false;
-                    $connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
+                    $connect->setStatus("The required field name '$key' has not been specified");
                     break;
                 }
             }
