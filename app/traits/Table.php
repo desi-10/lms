@@ -8,19 +8,19 @@ use App\Database;
     trait Table
     {
         /** @var string|array $table The table for the class methods */
-        protected string|array $table;
+        private string|array $table;
 
         /** @var string|string[] $columns The columns from the table */
-        protected string|array $columns;
+        private string|array $columns;
 
         /** @var string|string[] $where This is used for conditions in a search method */
-        protected string|array $where;
+        private string|array $where;
 
         /** @var string $class_table The general table for a class */
-        protected string $class_table;
+        private string $class_table;
 
         /** @var string[] $required_keys The necessary keys to be seen from input elements usually for insertion */
-        protected array $required_keys;
+        private array $required_keys;
 
         /** @var string[] $attributes This is the attributes and their data types */
         protected static array $attributes = [];
@@ -33,7 +33,7 @@ use App\Database;
          * 
          * @return mixed The resulting value
          */
-        protected function setDefault(array $array, string|int $key, $default_value){
+        private function setDefault(array $array, string|int $key, $default_value){
             return empty($array[$key]) || is_null($array[$key]) ? $default_value : $array[$key];
         }
 
@@ -44,7 +44,7 @@ use App\Database;
          * 
          * @return mixed The resulting value
          */
-        protected function set_default($subject, $default_value){
+        private function set_default($subject, $default_value){
             return empty($subject) || is_null($subject) ? $default_value : $subject;
         }
 
@@ -55,7 +55,7 @@ use App\Database;
          * @param string|int $new_key The name of the new key
          * @return void returns nothing, only makes the change
          */
-        protected function replaceKey(array &$array, int|string $old_key, int|string $new_key){
+        private function replaceKey(array &$array, int|string $old_key, int|string $new_key){
             if(isset($array[$old_key])){
                 $array[$new_key] = $array[$old_key];
                 unset($array[$old_key]);
@@ -78,7 +78,7 @@ use App\Database;
          * @param Database $connect The connection database, used to log a status
          * @return bool True if everything matches up, false if things fail
          */
-        protected function checkInsert(array $input_array, Database &$connect) :bool{
+        private function checkInsert(array $input_array, Database &$connect) :bool{
             $response = true;
 
             //stop processing if there is actually no input
@@ -87,13 +87,11 @@ use App\Database;
                 return false;
             }
 
-            $keys = $this->makeKeys($input_array);
-
-            //loop through input array for the value
-            foreach($keys as $key){
-                if(array_search($key, $this->required_keys) === false){
+            //make sure required keys are available
+            foreach($this->required_keys as $key){
+                if(!isset($input_array[$key])){
                     $response = false;
-                    $connect->setStatus("The field named '$key' was considered an invalid key for the request", true);
+                    $connect->setStatus("The required field name '$key' has not been specified");
                     break;
                 }
             }
@@ -108,7 +106,7 @@ use App\Database;
          * @param array $keys The keys is a list of array key names and their names in errors ["key" => ["name", "type"]]
          * @return bool|string returns true for a successful check and an error string for a non successful check
          */
-        protected function check($data, $keys) :bool|string{
+        private function check($data, $keys) :bool|string{
             //keys are in format ["key" => ["name", "type"]]
             $response = true;
 
@@ -169,6 +167,7 @@ use App\Database;
 
             switch(strtolower($type)){
                 case "int":
+                    $value = (string) $value;
                     if(!ctype_digit($value)){
                         $response = ucfirst($name)." provided is not a number";
                     }
@@ -187,7 +186,7 @@ use App\Database;
          * @param array $search_results The data to be converted
          * @return array The formated array
          */
-        protected static function convertToConstruct(array $search_results) :array{
+        private static function convertToConstruct(array $search_results) :array{
             if(isset($search_results[0]) && is_array($search_results[0])){
                 $search_results = $search_results[0];
             }
@@ -234,7 +233,7 @@ use App\Database;
          * @param bool $spit_values This is used to return an array of the values of the keys being removed
          * @return null|array doesnt return any value by default, but array if spit_values is true
          */
-        protected function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
+        private function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
             $response = null;
             $reserved_values = [];
 

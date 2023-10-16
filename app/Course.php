@@ -25,7 +25,7 @@
 
         private function set_defaults(){
             $this->class_table = "courses";
-            $this->required_keys = [ "course_name", "instructor_id", "course_code", "program_id" ];
+            $this->required_keys = [ "course_name", "course_alias", "instructor_id", "course_code", "program_id" ];
 
             //check user authentication
             Auth::authorize(["admin", "instructor"]);
@@ -115,6 +115,7 @@
          * @return Course|bool returns a new course or false
          */
         public static function find(string|int $course_id) : Course|bool{
+            $instance = new static(new Database);
             $column = "*"; $where = ["id=$course_id"]; $table = "courses";
 
             $search = static::$connect->fetch($column, $table, $where);

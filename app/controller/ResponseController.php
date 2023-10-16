@@ -11,10 +11,6 @@
             $this->database = new Database;
         }
 
-        private array $authorize = [
-            "student", "user", "instructor"
-        ];
-
         public function processRequest(string $method, string $class_name, ?string $id){
             if($id){
                 $this->processResource($method, $class_name, $id);
@@ -91,6 +87,7 @@
 
         /**
          * This function is used to retrieve a collection of results from the database
+         * It is also used for adding a new element to the database
          */
         private function processCollection(string $method, string $class_name){
             $object = new $class_name($this->database);
@@ -112,9 +109,9 @@
                         http_response_code(201);
                         $success = true;
                     }else{
+                        http_response_code(422);
                         $success = false;
                     }
-                    $results = $this->database->status();
                     break;
                 default:
                     http_response_code(405);
@@ -123,7 +120,7 @@
                     header("Allow: GET, POST");
             }
 
-            echo json_encode(["success" => $success, "results" => $results]);
+            echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
             // echo json_encode(["success" => $success, "results" => $results, "queries" => $this->database->queries(), "logs" => $this->database->getLogs()]);
         }
 
