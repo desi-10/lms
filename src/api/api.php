@@ -17,7 +17,8 @@
     App\Auth::auth();
 
     $accepted = [
-        "user","course","student", "instructor", "program"
+        "user","course","student", "instructor", "program",
+        "quiz"
     ];
     
     $parts = explode("/",$_SERVER["REQUEST_URI"]);
