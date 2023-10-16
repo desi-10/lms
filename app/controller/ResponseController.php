@@ -109,6 +109,7 @@
                         http_response_code(201);
                         $success = true;
                     }else{
+                        http_response_code(422);
                         $success = false;
                     }
                     break;
@@ -119,7 +120,7 @@
                     header("Allow: GET, POST");
             }
 
-            echo json_encode(["success" => $success, "results" => $results]);
+            echo json_encode(["success" => $success, "results" => $results, "message" => $this->database->status()]);
             // echo json_encode(["success" => $success, "results" => $results, "queries" => $this->database->queries(), "logs" => $this->database->getLogs()]);
         }
 
