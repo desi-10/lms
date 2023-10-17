@@ -46,6 +46,11 @@
                     $data["id"] = $data["id"] ?? $id;
 
                     $results = $object->update($data);
+
+                    if($results === true){
+                        $success = true;
+                    }
+
                     break;
                 case "DELETE":
                         $results = $object->delete($id);
