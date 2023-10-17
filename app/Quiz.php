@@ -13,8 +13,8 @@ use DateTime;
 
 
         public function __construct(Database $db = new Database,
-            private int $id = 0, private string $title = "", private string $description = "", private int $course_id = 0,
-            private int $program_id = 0, private int $program_level = 0, private int $instructor_id = 0,
+            private int $id = 0, private int $instructor_id = 0, private int $course_id = 0, private string $title = "",
+            private string $description = "", private int $program_id = 0, private int $program_level = 0,
             private string $start_date = "", private string $end_time = "", private bool $active = false
         ){
             self::$connect = $db;
@@ -32,7 +32,7 @@ use DateTime;
             ];
             static::$attributes = [
                 "id" => "int", "course_id" => "int", "title" => "string", "description" => "string",
-                "instructor_id" => "int", "program_id" => "string", "program_level" => "int", "start_date" => "string",
+                "instructor_id" => "int", "program_id" => "int", "program_level" => "int", "start_date" => "string",
                 "end_date" => "string", "active" => "bool"
             ];
 
@@ -83,9 +83,12 @@ use DateTime;
         public static function find(string|int $quiz_id) :self|bool{
             $response = false;
 
-            $instance = new static(new Database);
+            //create a new instance of the class 
+            if(empty(static::$connect)){
+                $instance = new self;
+            }
 
-            $search = static::$connect->fetch("*",$instance->class_table, "id=$quiz_id");
+            $search = static::$connect->fetch("*","quizzes", "id=$quiz_id");
 
             if(is_array($search)){
                 //create a new instance of the class
@@ -123,6 +126,39 @@ use DateTime;
         }
 
         /**
+         * This fetches all the questions for the quiz
+         * @param int $quiz_id Optional parameter of a quiz
+         * @return array|false An array of questions or false if not found
+         */
+        public function questions(?int $quiz_id = null) :array|bool{
+            $response = false;
+
+            //insert the id if it is available
+            $quiz_id = $quiz_id ?? $this->id;
+
+            if(!empty($quiz_id) && !is_null($quiz_id)){
+                $questions = new Question(static::$connect, quiz_id: $quiz_id);
+                $response = $questions->all();
+
+                if(is_array($response)){
+                    $new_response = [];
+                    foreach($response as $question){
+                        //append options to the multiple choice questions
+                        if(in_array($question["question_type"], $questions::multiple_select)){
+                            $new_question = new Question(self::$connect, ...$question);
+                            $new_response[] = $new_question->data();
+                        }
+                    }
+
+                    $response = $new_response;
+                }
+            }
+
+            return $response;
+        }
+
+
+        /**
          * This function creates a new course
          * @param array $details The details to be sent into the database
          * @return bool True for a successful create and error string for a fail
@@ -154,17 +190,19 @@ use DateTime;
          * @return bool|string returns true if successful or an error string
          */
         public function update(array $details) :bool|string{
+            Auth::authorize(["admin","instructor"]);
+            
             $response = false;
 
             if($this->checkInsert($details, static::$connect)){
-                if($this->validate($details, "update")){
+                if(($response = $this->validate($details, "update")) === true){
                     //grab current details
-                    if($current_details = self::find($details["id"])){
+                    if($current_details = static::find($details["id"])){
                         $current_details = $current_details->data();
 
                         $response = self::$connect->update($current_details, $details, $this->class_table, ["id"]);
                     }else{
-                        $response = "Quiz data was not found";
+                        $response = "Quiz data was not found. Update could not be carried out";
                     }
                 }
             }
@@ -178,6 +216,7 @@ use DateTime;
          * @return bool True if successful and false if not
          */
         public function delete(string|int $id) :bool{
+            Auth::authorize(["admin","instructor"]);
             $response = self::$connect->delete($this->class_table, "id=$id");
 
             if($response){
