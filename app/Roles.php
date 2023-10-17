@@ -48,6 +48,10 @@
          * @return self|bool returns a new instance of a role 
          */
         public static function find(int $role_id, Database $database = new Database) :self|bool{
+            if(empty(static::$connect)){
+                $instance = new static;
+            }
+            
             $response = $database->fetch("*","roles","id=$role_id");
 
             if(is_array($response)){

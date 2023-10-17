@@ -115,7 +115,9 @@
          * @return Course|bool returns a new course or false
          */
         public static function find(string|int $course_id) : Course|bool{
-            $instance = new static(new Database);
+            if(empty(static::$connect))
+                $instance = new static(new Database);
+            
             $column = "*"; $where = ["id=$course_id"]; $table = "courses";
 
             $search = static::$connect->fetch($column, $table, $where);

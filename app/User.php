@@ -257,7 +257,9 @@
         }
 
         public static function find(string|int $user_id, $table = []) :static|false{
-            $instance = new static(new Database);
+            if(empty(static::$connect)){
+                $instance = new static(new Database);
+            }            
             
             if(!empty($table)){
                 list("columns"=>$columns, "tables"=>$tables, "where"=>$where) = $table;

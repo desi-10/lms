@@ -62,7 +62,9 @@
          * @return self|bool returns a new course or false
          */
         public static function find(string|int $program_id) :self|bool{
-            $instance = new self(new Database);
+            if(empty(static::$connect))
+                $instance = new self(new Database);
+            
             $column = "*"; $where = ["id=$program_id"]; $table = "programs";
 
             $search = self::$connect->fetch($column, $table, $where);
