@@ -7,6 +7,8 @@ The API identifies the following items
     - instructor
     - program
     - quiz
+    - question
+    - questionoptions
 In this readme file, "identifier" is used in place of any of these
 
 That is to say, you would have to use something like /api/identifier to make requests
