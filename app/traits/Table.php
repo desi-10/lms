@@ -186,7 +186,7 @@ use App\Database;
          * @param array $search_results The data to be converted
          * @return array The formated array
          */
-        private static function convertToConstruct(array $search_results) :array{
+        protected static function convertToConstruct(array $search_results) :array{
             if(isset($search_results[0]) && is_array($search_results[0])){
                 $search_results = $search_results[0];
             }
@@ -249,5 +249,32 @@ use App\Database;
                 $response = $reserved_values;
             }
             return $response;
+        }
+
+        /**
+         * Check if a date string is in the right format
+         * @param string $value The date value
+         * @param bool $start This tells if its the start or end date
+         * @return bool formats date on true if its a valid date or return false if otherwise
+         */
+        private function checkDate(string &$value, bool $start = true) :bool{
+            $hasTime = preg_match('/\b(?:\d{1,2}:){1,2}\d{1,2}\b/', $value);
+
+            if(strtotime($value)){
+                //add time (+1hr) if it does not have one
+                if(!$hasTime){
+                    if($start){
+                        $value .= date(" H:i:s");
+                    }else{
+                        $value .= date(" H:i:s", strtotime("1 hour"));
+                    }
+                }
+
+                //format date in datetime format
+                $value = date("Y-m-d H:i:s", strtotime($value));
+                return true;
+            }else{
+                return false;
+            }
         }
     }
