@@ -16,6 +16,21 @@ That is to say, you would have to use something like /api/identifier to make req
 | GET REQUESTS
 To get all details from any of the above items, use the GET method and the url should be in the following format
     /api/identifier
+You can also get specific resourses. For example, you can get the questions from a specific quiz using the url format below
+    /api/quiz/1/questions
+There are some specific classes which have relations with other classes, and the associated array below defines it
+    [
+        "user" => ["courses"],
+        "quiz" => ["instructor", "course", "program", "questions"],
+        "student" => ["courses", "program"],
+        "question" => [],
+        "questionoption" => ["question"],
+        "program" => [],
+        "course" => ["instructor", "program"],
+        "instructor" => ["courses"]
+    ]
+usage: /api/identifier/id/method
+* NB: This approach is only available in the get requests alone. Other request methods are disallowed 
 
 To get a specific item, use /api/identifier/key
 For the case of students, you can use /api/student/id or /api/student/index_number and it would work

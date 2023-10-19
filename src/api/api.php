@@ -35,7 +35,8 @@
 
     $class = "\App\\".$parts[0];
     $id = $parts[1] ?? null;
+    $additional = $parts[2] ?? null;
 
     $response = new ResponseController;
 
-    $response->processRequest($_SERVER["REQUEST_METHOD"], $class, $id);
+    $response->processRequest($_SERVER["REQUEST_METHOD"], $class, $id, $additional);
