@@ -80,21 +80,6 @@
         }
 
         /**
-         * Convert an array to suit the constructor
-         * @param array $search_results The data to be converted
-         * @return array The formated array
-         */
-        private static function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
-            }
-
-            $search_results["id"] = (int) $search_results["id"];
-
-            return $search_results;
-        }
-
-        /**
          * This function creates a new program
          * @param array $details The details to be sent into the database
          * @return bool True for a successful create and error string for a fail

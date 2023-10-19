@@ -17,7 +17,7 @@
         public function __construct(private Database $db, 
             private int $id = 0, private string $course_name = "",
             private string $course_alias = "", 
-            private string $course_code = "", private int $instructor_id = 0
+            private string $course_code = "", private int $instructor_id = 0, private int $program_id = 0 
         ){
             static::$connect = $db;
             $this->set_defaults();
@@ -201,5 +201,19 @@
         public function instructor() :Instructor|bool{
             return $this->instructor_id > 0 ? 
                 Instructor::find($this->instructor_id) : false;
+        }
+
+        /**
+         * Grab the full details of the programs offering the course
+         * @return Program|bool returns the program details of the course
+         */
+        public function program() :Program|bool{
+            $response = false;
+
+            if($this->program_id > 0 && $program = Program::find($this->program_id)){
+                $response = $program;
+            }
+
+            return $response;
         }
     }
