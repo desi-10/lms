@@ -266,6 +266,10 @@
             }
             else{
                 $columns = "*"; $tables = "users"; $where = "id=$user_id";
+                $instance = new static(static::$connect);
+                if($instance->user_role > 0){
+                    $where .= " AND user_role=".$instance->user_role;
+                }
             }
             
             $search = static::$connect->fetch($columns,$tables,$where);
