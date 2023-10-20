@@ -80,12 +80,12 @@ use DateTime;
          * @param string|int $quiz_id This is the id for the quiz
          * @return self|bool returns a new quiz or false
          */
-        public static function find(string|int $quiz_id) :self|bool{
+        public static function find(string|int $quiz_id, Database &$connection = new Database) :self|bool{
             $response = false;
 
             //create a new instance of the class 
             if(empty(static::$connect)){
-                $instance = new self;
+                $instance = new self($connection);
             }
 
             $search = static::$connect->fetch("*","quizzes", "id=$quiz_id");
@@ -106,7 +106,7 @@ use DateTime;
          * @return Instructor|false The details of the instructor or false if none
          */
         public function instructor() :Instructor|false{
-            return $this->instructor_id > 0 ? Instructor::find($this->instructor_id) : false;
+            return $this->instructor_id > 0 ? Instructor::find($this->instructor_id, connection:static::$connect) : false;
         }
 
         /**
@@ -114,7 +114,7 @@ use DateTime;
          * @return Course|false The details of the instructor or false if none
          */
         public function course() :Course|false{
-            return $this->course_id > 0 ? Course::find($this->course_id) : false;
+            return $this->course_id > 0 ? Course::find($this->course_id, static::$connect) : false;
         }
 
         /**
@@ -122,7 +122,7 @@ use DateTime;
          * @return Program|false The details of the instructor or false if none
          */
         public function program() :Program|false{
-            return $this->program_id > 0 ? Program::find($this->program_id) : false;
+            return $this->program_id > 0 ? Program::find($this->program_id, static::$connect) : false;
         }
 
         /**
@@ -267,17 +267,17 @@ use DateTime;
          */
         private function validate_fields(array &$details) :bool|string{
             //check if user provided is an instructor
-            if(!Instructor::find($details["instructor_id"])){
+            if(!Instructor::find($details["instructor_id"], connection: static::$connect)){
                 return "The specified user is not registered as an instructor";
             }
 
             //check if the selected course is valid
-            if(!Course::find((int) $details["course_id"])){
+            if(!Course::find((int) $details["course_id"], static::$connect)){
                 return "Course provided does not exist";
             }
 
             //check if the program is valid
-            if(!Program::find($details["program_id"])){
+            if(!Program::find($details["program_id"], static::$connect)){
                 return "Program chosen does not exist";
             }
 

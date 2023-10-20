@@ -87,11 +87,11 @@
          * @param string|int $question_id This is the id for the question
          * @return self|bool returns a new question or false
          */
-        public static function find(string|int $question_id) :self|bool{
+        public static function find(string|int $question_id, Database &$connection = new Database) :self|bool{
             $question = false;
 
             if(empty(static::$connect)){
-                $instance = new static;
+                $instance = new static($connection);
             }
 
             $search = static::$connect->fetch("*","questions","id=$question_id");
@@ -208,7 +208,7 @@
             }
 
             //check if the quiz chosen exists
-            if(!Quiz::find((int) $details["quiz_id"])){
+            if(!Quiz::find((int) $details["quiz_id"], connection: static::$connect)){
                 return "The specified quiz does not exist";
             }
 

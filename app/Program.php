@@ -61,17 +61,17 @@
          * @param string|int $course_id This is the id for the course
          * @return self|bool returns a new course or false
          */
-        public static function find(string|int $program_id) :self|bool{
+        public static function find(string|int $program_id, Database &$connection = new Database) :self|bool{
             if(empty(static::$connect))
-                $instance = new self(new Database);
+                $instance = new static($connection);
             
             $column = "*"; $where = ["id=$program_id"]; $table = "programs";
 
-            $search = self::$connect->fetch($column, $table, $where);
+            $search = static::$connect->fetch($column, $table, $where);
 
             if(is_array($search)){
-                $search = self::convertToConstruct($search);
-                $response = new self(self::$connect, ...array_values($search));
+                $search = static::convertToConstruct($search);
+                $response = new static(static::$connect, ...array_values($search));
             }else{
                 $response = false;
             }

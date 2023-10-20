@@ -66,7 +66,7 @@
         public function question() :array|false{
             $response = false;
 
-            if($this->question_id > 0 && $response = Question::find($this->question_id)){
+            if($this->question_id > 0 && $response = Question::find($this->question_id, connection: static::$connect)){
                 $response = $response->data();
             }
 
@@ -78,11 +78,11 @@
          * @param string|int $option_id This is the id for the option
          * @return self|bool returns a new option or false
          */
-        public static function find(string|int $option_id) :self|bool{
+        public static function find(string|int $option_id, Database &$connection = new Database) :self|bool{
             $response = false;
 
             if(empty(static::$connect))
-                $instance = new static;
+                $instance = new static($connection);
             
             $search = static::$connect->fetch("*","questionoptions", "id=$option_id");
 
@@ -193,7 +193,7 @@
          * @return bool|string True if everything is correct or an error string
          */
         private function validate_fields(array $details) :bool|string{
-            if(!Question::find($details["question_id"])){
+            if(!Question::find($details["question_id"], static::$connect)){
                 return "Question provided is invalid or does not exist";
             }
 

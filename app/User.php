@@ -256,10 +256,10 @@
             return static::$connect->getLogs();
         }
 
-        public static function find(string|int $user_id, $table = []) :static|false{
+        public static function find(string|int $user_id, $table = [], Database &$connection = new Database) :static|false{
             if(empty(static::$connect)){
-                $instance = new static(new Database);
-            }            
+                $instance = new static($connection);
+            }
             
             if(!empty($table)){
                 list("columns"=>$columns, "tables"=>$tables, "where"=>$where) = $table;

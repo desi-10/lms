@@ -47,16 +47,16 @@
          * @param int $role_id The id to be searched
          * @return self|bool returns a new instance of a role 
          */
-        public static function find(int $role_id, Database $database = new Database) :self|bool{
+        public static function find(int $role_id, Database &$connection = new Database) :self|bool{
             if(empty(static::$connect)){
-                $instance = new static;
+                $instance = new static($connection);
             }
             
-            $response = $database->fetch("*","roles","id=$role_id");
+            $response = $connection->fetch("*","roles","id=$role_id");
 
             if(is_array($response)){
                 $response = self::convertToConstruct($response);
-                $response = new static($database, ...$response);
+                $response = new static($connection, ...$response);
 
                 //determine current role set
                 $response->setuserRole($response);
