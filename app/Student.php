@@ -144,13 +144,13 @@
             $response = "Program not found";
 
             if($this->program_id > 0){
-                $response = Program::find($this->program_id);
+                $response = Program::find($this->program_id, connection: self::$connect);
             }
 
             return $response;
         }
 
-        public static function find(int|string $user_id, $table = []) :static|false{
+        public static function find(int|string $user_id, $table = [], Database &$connection = new Database) :static|false{
             $table = [
                 "columns" => "u.*, s.index_number, s.level, s.program_id",
                 "tables" => [
@@ -163,7 +163,7 @@
                 "where" => "u.id=$user_id OR s.index_number='$user_id'"
             ];
 
-            $response = parent::find($user_id, $table);
+            $response = parent::find($user_id, $table, $connection);
 
             return $response;
         }
@@ -230,7 +230,7 @@
         }
 
         private function checkProgram(int $program_id){
-            $response = (bool) Program::find($program_id);
+            $response = (bool) Program::find($program_id, connection: static::$connect);
 
             if(!$response){
                 static::$connect->setStatus("Program '$program_id' does not exist", true);

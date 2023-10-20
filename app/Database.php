@@ -170,7 +170,7 @@
             $new_tables = "";
 
             if(is_array($tables)){
-                if(is_array($tables[0])){
+                if(isset($tables[0]) && is_array($tables[0])){
                     // at this point, tables should have the following keys
                     // "join" => "table1 table2", "alias" => "tb1 tb2" and "on" => "id1 id2"
                     foreach($tables as $table){
@@ -182,6 +182,14 @@
                         $this->joinTableString($new_tables, $table2, $alias2);
                         $this->onTableString($new_tables, $table);
                     }
+                }elseif(!isset($tables[0])){
+                    list($table1, $table2, $alias1, 
+                        $alias2, $ref1, $ref2) = $this->tableArraySplit($tables);
+
+                    //bind table1 to string
+                    $this->joinTableString($new_tables, $table1, $alias1);
+                    $this->joinTableString($new_tables, $table2, $alias2);
+                    $this->onTableString($new_tables, $tables);
                 }else{
                     // only table names should assume ids of the tables
                     $new_tables = implode(" JOIN ", $tables);                

@@ -2,9 +2,11 @@
     declare(strict_types=1);
 
     namespace App;
+    use App\Traits\Table;
 
     class Roles
     {
+        use Table;
         public bool $is_admin;
         public bool $is_instructor;
         public bool $is_student;
@@ -16,9 +18,19 @@
         private array $values = ["admin","instructor","student"];
 
         public function __construct(Database $db = new Database, string $name = "", int $id = 0){
+            $this->set_defaults();
+
             $this->resetAll($name, $id);
 
             static::$connect = $db;
+        }
+
+        protected function set_defaults(){
+            $this->class_table = "roles";
+            $this->required_keys = ["name"];
+            static::$attributes = [
+                "name" => "string", "id" => "int"
+            ];
         }
 
         private function resetAll(string $name, int $id){
@@ -27,6 +39,8 @@
             $this->is_student = false;
             $this->name = $name;
             $this->id = $id;
+
+            $this->setUserRole($this);
         }
 
         public function data() :array|string{
@@ -47,12 +61,16 @@
          * @param int $role_id The id to be searched
          * @return self|bool returns a new instance of a role 
          */
-        public static function find(int $role_id, Database $database = new Database) :self|bool{
-            $response = $database->fetch("*","roles","id=$role_id");
-
+        public static function find(int $role_id, Database &$connection = new Database) :self|bool{
+            if(empty(static::$connect)){
+                $instance = new static($connection);
+            }
+            
+            $response = $connection->fetch("*","roles","id=$role_id");
+            
             if(is_array($response)){
                 $response = self::convertToConstruct($response);
-                $response = new static($database, ...$response);
+                $response = new static($connection, ...$response);
 
                 //determine current role set
                 $response->setuserRole($response);
@@ -62,16 +80,6 @@
             }
 
             return $response;
-        }
-
-        private static function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
-            }
-
-            $search_results["id"] = (int) $search_results["id"];
-
-            return $search_results;
         }
 
         public function create(){

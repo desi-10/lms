@@ -47,6 +47,9 @@
         public static function find(string|int $program_id) :self|bool{
             $response = false;
 
+            if(empty(static::$connect))
+                $instance = new self;
+
             return $response;
         }
 
@@ -88,7 +91,7 @@
          * @param array $data The data to be processed
          * @param string $mode The mode of the request
          * @return string|bool returns true if everything is fine or string of error
-         */
+        */
         protected function validate(array $data, string $mode) :string|bool{
             $response = true;
 
@@ -102,6 +105,19 @@
 
             $response = $this->check($data, $keys);
 
+            if($response === true){
+                $response = $this->validate_fields($data);
+            }
+
             return $response;
-         }
+        }
+
+        /**
+         * Check key details in the input string
+         * @param array $details The input data to be checked
+         * @return bool|string True if everything is correct or an error string
+         */
+        private function validate_fields(array $details) :bool|string{
+            
+        }
     }

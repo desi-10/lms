@@ -99,8 +99,12 @@
          * This function provides the details of the current signed in user
          * @return static|bool returns the data of the current logged in user or false if there is none
          */
-        public static function auth() :static|bool{
+        public static function auth() :static|array|bool{
             $response = false;
+
+            if(empty(static::$connect)){
+                new static(new Database);
+            }
             
             $headers = getallheaders();
 
@@ -112,12 +116,41 @@
 
                 if(str_contains($decoded, ".")){
                     $user_id = (int) explode(".",$decoded)[0];
-                    $response = static::find($user_id);
 
-                    //mark that this user is logged in and set up the roles
-                    if($response !== false){
-                        $response::$loggedIn = true; 
-                        $response->role = $response->create_role($response);
+                    $columns = ["u.*", "r.name", "r.id as role_id"];
+                    $tables = [
+                        "join" => "users roles", 
+                        "alias" => "u r", 
+                        "on" => "user_role id"
+                    ];
+                    $where = "u.id=$user_id";
+
+                    $response = static::$connect->fetch($columns, $tables, $where);
+
+                    if(is_array($response)){
+                        $response = $response[0];
+                        $role = static::remove_keys($response, ["role_id", "name"], true);
+                        // replace role_id with id
+                        static::replace_key($role, "role_id", "id");
+
+                        $role["id"] = (int) $role["id"];
+                        $role = new Roles(static::$connect, ...$role);
+
+                        //create the user
+                        $response["id"] = (int) $response["id"];
+                        $response["user_role"] = (int) $response["user_role"];
+
+                        static::replace_key($response, "id", "user_id");
+
+                        $response = new static(static::$connect, ...$response);
+
+                        //set the role
+                        $response->role = $role;
+
+                        //register user as logged in
+                        $response::$loggedIn = true;
+                    }else{
+                        $response = false;
                     }
                 }else{
                     $response = false;
@@ -256,14 +289,20 @@
             return static::$connect->getLogs();
         }
 
-        public static function find(string|int $user_id, $table = []) :static|false{
-            $instance = new static(new Database);
+        public static function find(string|int $user_id, $table = [], Database &$connection = new Database) :static|false{
+            if(empty(static::$connect)){
+                $instance = new static($connection);
+            }
             
             if(!empty($table)){
                 list("columns"=>$columns, "tables"=>$tables, "where"=>$where) = $table;
             }
             else{
                 $columns = "*"; $tables = "users"; $where = "id=$user_id";
+                $instance = new static(static::$connect);
+                if($instance->user_role > 0){
+                    $where .= " AND user_role=".$instance->user_role;
+                }
             }
             
             $search = static::$connect->fetch($columns,$tables,$where);

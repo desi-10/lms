@@ -157,7 +157,7 @@ CREATE TABLE `elms`.`questions` (
     `question_image` VARCHAR(255) NULL DEFAULT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `questions_quiz` (`quiz_id`),
-    FOREIGN KEY (`quiz_id`) REFERENCES `elms`.`quizzes`(`id`)
+    FOREIGN KEY (`quiz_id`) REFERENCES `elms`.`quizzes`(`id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating a table for the options for questions [usually select options]
@@ -167,7 +167,7 @@ CREATE TABLE `elms`.`questionoptions` (
     `content` VARCHAR(255) NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `questionoptions_question` (`question_id`),
-    FOREIGN KEY (`question_id`) REFERENCES `elms`.`questions`(`id`)
+    FOREIGN KEY (`question_id`) REFERENCES `elms`.`questions`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- Creating a submission table
@@ -191,7 +191,7 @@ CREATE TABLE `elms`.`grades` (
     `score` DECIMAL(5,2) NOT NULL , 
     PRIMARY KEY (`id`), 
     INDEX `grade_student` (`student_id`),
-    FOREIGN KEY (`student_id`) REFERENCES `elms`.`users`(`id`)
+    FOREIGN KEY (`student_id`) REFERENCES `elms`.`users`(`id`) ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- -------------------------

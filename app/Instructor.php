@@ -23,4 +23,19 @@
 
             return $response;
         }
+
+        /**
+         * This returns all the active assignments of the user
+         * @return array|string|bool a list of active assignments
+         */
+        public function assignments() :array|string|bool{
+            $response = false;
+
+            // Auth::authorize(["admin", "instructor"]);
+            
+            $response = new Assignment(static::$connect, active: true, instructor_id: $this->user_id);
+            $response = $response->all();
+
+            return $response;
+        }
     }

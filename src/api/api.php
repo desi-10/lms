@@ -7,6 +7,7 @@
 
     use App\Controller\ResponseController;
     use App\Error;
+    use App\Auth;
 
     set_error_handler([Error::class, "handleError"]);
     set_exception_handler([Error::class, "errorHandler"]);
@@ -14,11 +15,11 @@
     header("Content-type: application/json");
 
     //enable authorization
-    App\Auth::auth();
+    Auth::auth();
 
     $accepted = [
         "user","course","student", "instructor", "program",
-        "quiz"
+        "quiz", "question", "questionoptions", "assignment"
     ];
     
     $parts = explode("/",$_SERVER["REQUEST_URI"]);
@@ -35,7 +36,8 @@
 
     $class = "\App\\".$parts[0];
     $id = $parts[1] ?? null;
+    $additional = $parts[2] ?? null;
 
     $response = new ResponseController;
 
-    $response->processRequest($_SERVER["REQUEST_METHOD"], $class, $id);
+    $response->processRequest($_SERVER["REQUEST_METHOD"], $class, $id, $additional);

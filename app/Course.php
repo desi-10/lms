@@ -17,7 +17,7 @@
         public function __construct(private Database $db, 
             private int $id = 0, private string $course_name = "",
             private string $course_alias = "", 
-            private string $course_code = "", private int $instructor_id = 0
+            private string $course_code = "", private int $instructor_id = 0, private int $program_id = 0 
         ){
             static::$connect = $db;
             $this->set_defaults();
@@ -55,7 +55,7 @@
                 
                 if(($response = $this->validate($details, "insert")) === true){
                     //make sure the user specified is an instructor
-                    if(Instructor::find((int) $details["instructor_id"]) || Auth::$admin){
+                    if(Instructor::find((int) $details["instructor_id"], connection: static::$connect)){
                         $response = self::$connect->insert($this->class_table, $details);
                     }else{
                         $response = "Selected user is not an instructor";
@@ -114,8 +114,10 @@
          * @param string|int $course_id This is the id for the course
          * @return Course|bool returns a new course or false
          */
-        public static function find(string|int $course_id) : Course|bool{
-            $instance = new static(new Database);
+        public static function find(string|int $course_id, Database &$connection = new Database) : Course|bool{
+            if(empty(static::$connect))
+                $instance = new static($connection);
+            
             $column = "*"; $where = ["id=$course_id"]; $table = "courses";
 
             $search = static::$connect->fetch($column, $table, $where);
@@ -198,6 +200,20 @@
          */
         public function instructor() :Instructor|bool{
             return $this->instructor_id > 0 ? 
-                Instructor::find($this->instructor_id) : false;
+                Instructor::find($this->instructor_id, connection: static::$connect) : false;
+        }
+
+        /**
+         * Grab the full details of the programs offering the course
+         * @return Program|bool returns the program details of the course
+         */
+        public function program() :Program|bool{
+            $response = false;
+
+            if($this->program_id > 0 && $program = Program::find($this->program_id, connection: static::$connect)) {
+                $response = $program;
+            }
+
+            return $response;
         }
     }

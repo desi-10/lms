@@ -61,35 +61,22 @@
          * @param string|int $course_id This is the id for the course
          * @return self|bool returns a new course or false
          */
-        public static function find(string|int $program_id) :self|bool{
-            $instance = new self(new Database);
+        public static function find(string|int $program_id, Database &$connection = new Database) :self|bool{
+            if(empty(static::$connect))
+                $instance = new static($connection);
+            
             $column = "*"; $where = ["id=$program_id"]; $table = "programs";
 
-            $search = self::$connect->fetch($column, $table, $where);
+            $search = static::$connect->fetch($column, $table, $where);
 
             if(is_array($search)){
-                $search = self::convertToConstruct($search);
-                $response = new self(self::$connect, ...array_values($search));
+                $search = static::convertToConstruct($search);
+                $response = new static(static::$connect, ...array_values($search));
             }else{
                 $response = false;
             }
 
             return $response;
-        }
-
-        /**
-         * Convert an array to suit the constructor
-         * @param array $search_results The data to be converted
-         * @return array The formated array
-         */
-        private static function convertToConstruct(array $search_results) :array{
-            if(is_array($search_results[0])){
-                $search_results = $search_results[0];
-            }
-
-            $search_results["id"] = (int) $search_results["id"];
-
-            return $search_results;
         }
 
         /**

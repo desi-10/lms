@@ -13,8 +13,8 @@ use DateTime;
 
 
         public function __construct(Database $db = new Database,
-            private int $id = 0, private string $title = "", private string $description = "", private int $course_id = 0,
-            private int $program_id = 0, private int $program_level = 0, private int $instructor_id = 0,
+            private int $id = 0, private int $instructor_id = 0, private int $course_id = 0, private string $title = "",
+            private string $description = "", private int $program_id = 0, private int $program_level = 0,
             private string $start_date = "", private string $end_time = "", private bool $active = false
         ){
             self::$connect = $db;
@@ -32,7 +32,7 @@ use DateTime;
             ];
             static::$attributes = [
                 "id" => "int", "course_id" => "int", "title" => "string", "description" => "string",
-                "instructor_id" => "int", "program_id" => "string", "program_level" => "int", "start_date" => "string",
+                "instructor_id" => "int", "program_id" => "int", "program_level" => "int", "start_date" => "string",
                 "end_date" => "string", "active" => "bool"
             ];
 
@@ -80,12 +80,15 @@ use DateTime;
          * @param string|int $quiz_id This is the id for the quiz
          * @return self|bool returns a new quiz or false
          */
-        public static function find(string|int $quiz_id) :self|bool{
+        public static function find(string|int $quiz_id, Database &$connection = new Database) :self|bool{
             $response = false;
 
-            $instance = new static(new Database);
+            //create a new instance of the class 
+            if(empty(static::$connect)){
+                $instance = new self($connection);
+            }
 
-            $search = static::$connect->fetch("*",$instance->class_table, "id=$quiz_id");
+            $search = static::$connect->fetch("*","quizzes", "id=$quiz_id");
 
             if(is_array($search)){
                 //create a new instance of the class
@@ -103,7 +106,7 @@ use DateTime;
          * @return Instructor|false The details of the instructor or false if none
          */
         public function instructor() :Instructor|false{
-            return $this->instructor_id > 0 ? Instructor::find($this->instructor_id) : false;
+            return $this->instructor_id > 0 ? Instructor::find($this->instructor_id, connection:static::$connect) : false;
         }
 
         /**
@@ -111,7 +114,7 @@ use DateTime;
          * @return Course|false The details of the instructor or false if none
          */
         public function course() :Course|false{
-            return $this->course_id > 0 ? Course::find($this->course_id) : false;
+            return $this->course_id > 0 ? Course::find($this->course_id, static::$connect) : false;
         }
 
         /**
@@ -119,8 +122,41 @@ use DateTime;
          * @return Program|false The details of the instructor or false if none
          */
         public function program() :Program|false{
-            return $this->program_id > 0 ? Program::find($this->program_id) : false;
+            return $this->program_id > 0 ? Program::find($this->program_id, static::$connect) : false;
         }
+
+        /**
+         * This fetches all the questions for the quiz
+         * @param int $quiz_id Optional parameter of a quiz
+         * @return array|false An array of questions or false if not found
+         */
+        public function questions(?int $quiz_id = null) :array|bool{
+            $response = false;
+
+            //insert the id if it is available
+            $quiz_id = $quiz_id ?? $this->id;
+
+            if(!empty($quiz_id) && !is_null($quiz_id)){
+                $questions = new Question(static::$connect, quiz_id: $quiz_id);
+                $response = $questions->all();
+
+                if(is_array($response)){
+                    $new_response = [];
+                    foreach($response as $question){
+                        //append options to the multiple choice questions
+                        if(in_array($question["question_type"], $questions::multiple_select)){
+                            $new_question = new Question(self::$connect, ...$question);
+                            $new_response[] = $new_question->data();
+                        }
+                    }
+
+                    $response = $new_response;
+                }
+            }
+
+            return $response;
+        }
+
 
         /**
          * This function creates a new course
@@ -154,17 +190,19 @@ use DateTime;
          * @return bool|string returns true if successful or an error string
          */
         public function update(array $details) :bool|string{
+            Auth::authorize(["admin","instructor"]);
+            
             $response = false;
 
             if($this->checkInsert($details, static::$connect)){
-                if($this->validate($details, "update")){
+                if(($response = $this->validate($details, "update")) === true){
                     //grab current details
-                    if($current_details = self::find($details["id"])){
+                    if($current_details = static::find($details["id"])){
                         $current_details = $current_details->data();
 
                         $response = self::$connect->update($current_details, $details, $this->class_table, ["id"]);
                     }else{
-                        $response = "Quiz data was not found";
+                        $response = "Quiz data was not found. Update could not be carried out";
                     }
                 }
             }
@@ -178,6 +216,7 @@ use DateTime;
          * @return bool True if successful and false if not
          */
         public function delete(string|int $id) :bool{
+            Auth::authorize(["admin","instructor"]);
             $response = self::$connect->delete($this->class_table, "id=$id");
 
             if($response){
@@ -228,21 +267,17 @@ use DateTime;
          */
         private function validate_fields(array &$details) :bool|string{
             //check if user provided is an instructor
-            $instructor = Instructor::find((int) $details["instructor_id"]);
-
-            if(!$instructor){
-                return "Instructor provided does not exist";
-            }elseif($instructor->getRole() != 2){
-                return "User specified is not an instructor";
+            if(!Instructor::find($details["instructor_id"], connection: static::$connect)){
+                return "The specified user is not registered as an instructor";
             }
 
             //check if the selected course is valid
-            if(!Course::find((int) $details["course_id"])){
+            if(!Course::find((int) $details["course_id"], static::$connect)){
                 return "Course provided does not exist";
             }
 
             //check if the program is valid
-            if(!Program::find($details["program_id"])){
+            if(!Program::find($details["program_id"], static::$connect)){
                 return "Program chosen does not exist";
             }
 
@@ -264,32 +299,5 @@ use DateTime;
 
             //return true if there was no failure
             return true;
-        }
-
-        /**
-         * Check if a date string is in the right format
-         * @param string $value The date value
-         * @param bool $start This tells if its the start or end date
-         * @return bool formats date on true if its a valid date or return false if otherwise
-         */
-        private function checkDate(string &$value, bool $start = true) :bool{
-            $hasTime = preg_match('/\b(?:\d{1,2}:){1,2}\d{1,2}\b/', $value);
-
-            if(strtotime($value)){
-                //add time (+1hr) if it does not have one
-                if(!$hasTime){
-                    if($start){
-                        $value .= date(" H:i:s");
-                    }else{
-                        $value .= date(" H:i:s", strtotime("1 hour"));
-                    }
-                }
-
-                //format date in datetime format
-                $value = date("Y-m-d H:i:s", strtotime($value));
-                return true;
-            }else{
-                return false;
-            }
         }
     }

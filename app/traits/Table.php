@@ -10,12 +10,6 @@ use App\Database;
         /** @var string|array $table The table for the class methods */
         private string|array $table;
 
-        /** @var string|string[] $columns The columns from the table */
-        private string|array $columns;
-
-        /** @var string|string[] $where This is used for conditions in a search method */
-        private string|array $where;
-
         /** @var string $class_table The general table for a class */
         private string $class_table;
 
@@ -56,6 +50,13 @@ use App\Database;
          * @return void returns nothing, only makes the change
          */
         private function replaceKey(array &$array, int|string $old_key, int|string $new_key){
+            static::replace_key($array, $old_key, $new_key);
+        }
+
+        /**
+         * A static form of the replaceKey function
+         */
+        private static function replace_key(array &$array, int|string $old_key, int|string $new_key){
             if(isset($array[$old_key])){
                 $array[$new_key] = $array[$old_key];
                 unset($array[$old_key]);
@@ -186,7 +187,7 @@ use App\Database;
          * @param array $search_results The data to be converted
          * @return array The formated array
          */
-        private static function convertToConstruct(array $search_results) :array{
+        protected static function convertToConstruct(array $search_results) :array{
             if(isset($search_results[0]) && is_array($search_results[0])){
                 $search_results = $search_results[0];
             }
@@ -234,6 +235,15 @@ use App\Database;
          * @return null|array doesnt return any value by default, but array if spit_values is true
          */
         private function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
+            $response = static::remove_keys($array, $keys, $spit_values);
+
+            return $response;
+        }
+
+        /**
+         * Is a static form of the removeKeys function
+         */
+        private static function remove_keys(array &$array, array $keys, bool $spit_values = false) :null|array{
             $response = null;
             $reserved_values = [];
 
@@ -249,5 +259,32 @@ use App\Database;
                 $response = $reserved_values;
             }
             return $response;
+        }
+
+        /**
+         * Check if a date string is in the right format
+         * @param string $value The date value
+         * @param bool $start This tells if its the start or end date
+         * @return bool formats date on true if its a valid date or return false if otherwise
+         */
+        private function checkDate(string &$value, bool $start = true) :bool{
+            $hasTime = preg_match('/\b(?:\d{1,2}:){1,2}\d{1,2}\b/', $value);
+
+            if(strtotime($value)){
+                //add time (+1hr) if it does not have one
+                if(!$hasTime){
+                    if($start){
+                        $value .= date(" H:i:s");
+                    }else{
+                        $value .= date(" H:i:s", strtotime("1 hour"));
+                    }
+                }
+
+                //format date in datetime format
+                $value = date("Y-m-d H:i:s", strtotime($value));
+                return true;
+            }else{
+                return false;
+            }
         }
     }
