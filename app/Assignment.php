@@ -206,6 +206,7 @@
 
             if($mode == "update"){
                 $keys["id"] = ["assignment id", "int"];
+                $keys["start_date"] = ["submission start date", "string"];
             }
 
             $response = $this->check($data, $keys);
