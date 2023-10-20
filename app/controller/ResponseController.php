@@ -34,7 +34,7 @@
             
             switch($method){
                 case "GET":
-                    $results = $object::find($id);
+                    $results = $object::find($id, connection: $this->database);
                     
                     if($results !== false){
                         $success = true;
@@ -152,7 +152,7 @@
             switch ($method){
                 case "GET":
                     if($this->checkAdditional($class_name, $additional)){
-                        $object = $class_name::find($id);
+                        $object = $class_name::find($id, connection: $this->database);
 
                         if($object){
                             $results = $object->$additional();
@@ -196,9 +196,10 @@
                 "student" => ["courses", "program"],
                 "question" => [],
                 "questionoption" => ["question"],
-                "program" => [],
-                "course" => ["instructor", "program"],
-                "instructor" => ["courses"]
+                "program" => ["assignments"],
+                "course" => ["instructor", "program", "assignments"],
+                "instructor" => ["courses", "assignments"],
+                "assignment" => ["course","instructor","program"],
             ];
 
             return in_array($additional, $allowed_methods[$class_name]);
