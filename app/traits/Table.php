@@ -10,12 +10,6 @@ use App\Database;
         /** @var string|array $table The table for the class methods */
         private string|array $table;
 
-        /** @var string|string[] $columns The columns from the table */
-        private string|array $columns;
-
-        /** @var string|string[] $where This is used for conditions in a search method */
-        private string|array $where;
-
         /** @var string $class_table The general table for a class */
         private string $class_table;
 
@@ -56,6 +50,13 @@ use App\Database;
          * @return void returns nothing, only makes the change
          */
         private function replaceKey(array &$array, int|string $old_key, int|string $new_key){
+            static::replace_key($array, $old_key, $new_key);
+        }
+
+        /**
+         * A static form of the replaceKey function
+         */
+        private static function replace_key(array &$array, int|string $old_key, int|string $new_key){
             if(isset($array[$old_key])){
                 $array[$new_key] = $array[$old_key];
                 unset($array[$old_key]);
@@ -234,6 +235,15 @@ use App\Database;
          * @return null|array doesnt return any value by default, but array if spit_values is true
          */
         private function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
+            $response = static::remove_keys($array, $keys, $spit_values);
+
+            return $response;
+        }
+
+        /**
+         * Is a static form of the removeKeys function
+         */
+        private static function remove_keys(array &$array, array $keys, bool $spit_values = false) :null|array{
             $response = null;
             $reserved_values = [];
 
