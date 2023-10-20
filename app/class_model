@@ -118,6 +118,6 @@
          * @return bool|string True if everything is correct or an error string
          */
         private function validate_fields(array $details) :bool|string{
-            
+            return true;
         }
     }
