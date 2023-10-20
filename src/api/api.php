@@ -20,7 +20,7 @@
     $accepted = [
         "user","course","student", "instructor", "program",
         "quiz", "question", "questionoptions", "assignment",
-        "discussion", "grade"
+        "discussion", "grade", "message"
     ];
     
     $parts = explode("/",$_SERVER["REQUEST_URI"]);

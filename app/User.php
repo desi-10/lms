@@ -406,4 +406,37 @@
 
             return is_array($response) ? $response : false;
         }
+
+        /**
+         * Get the messages sent and received by this user
+         * @return array|false
+         */
+        public function messages() :array|false{
+            $message = new Message(self::$connect, sender_id: $this->user_id, recepient_id: $this->user_id);
+            $response = $message->all();
+
+            return is_array($response) ? $response : false;
+        }
+
+        /**
+         * Get the messages sent by this user
+         * @return array|false
+         */
+        public function message_sent() :array|false{
+            $message = new Message(self::$connect, sender_id: $this->user_id);
+            $response = $message->all();
+
+            return is_array($response) ? $response : false;
+        }
+
+        /**
+         * Get the messages received by this user
+         * @return array|false
+         */
+        public function message_received() :array|false{
+            $message = new Message(self::$connect, recepient_id: $this->user_id);
+            $response = $message->all();
+
+            return is_array($response) ? $response : false;
+        }
     }
