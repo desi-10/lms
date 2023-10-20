@@ -392,7 +392,14 @@
             return $response;
         }
 
-        public function courses(){
-            
+        /**
+         * Get the discussions this user has been involved in
+         * @return array|false An array of discussions or false if none
+         */
+        public function discussions() :array|false{
+            $discussion = new Discussion(self::$connect, user_id: $this->user_id);
+            $response = $discussion->all();
+
+            return is_array($response) ? $response : false;
         }
     }

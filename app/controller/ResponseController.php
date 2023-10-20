@@ -191,15 +191,16 @@
             
             //the allowed methods for the various classes
             $allowed_methods = [
-                "user" => ["courses"],
+                "user" => ["discussions"],
                 "quiz" => ["instructor", "course", "program", "questions"],
-                "student" => ["courses", "program"],
+                "student" => ["program", "discussions"],
                 "question" => [],
                 "questionoption" => ["question"],
                 "program" => ["assignments"],
-                "course" => ["instructor", "program", "assignments"],
-                "instructor" => ["courses", "assignments"],
+                "course" => ["instructor", "program", "assignments", "discussions"],
+                "instructor" => ["courses", "assignments", "discussions"],
                 "assignment" => ["course","instructor","program"],
+                "discussion" => ["course","user"]
             ];
 
             return in_array($additional, $allowed_methods[$class_name]);
