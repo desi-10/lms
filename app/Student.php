@@ -15,11 +15,11 @@
         public function __construct(Database $database, 
             int $user_id = 0, string $lname = '', 
             string $oname = '', string $username = '', int $user_role = 3,
-            string $index_number = '', int $level = 0, int $program_id = 0){
+            string $index_number = '', int|string $level = 0, int|string $program_id = 0){
                 parent::__construct($database, $user_id, $lname, $oname, $username, $user_role);
                 $this->index_number = $index_number;
-                $this->level = $level;
-                $this->program_id = $program_id;
+                $this->level = (int) $level;
+                $this->program_id = (int) $program_id;
 
                 $this->set_class_defaults();
         }
@@ -286,5 +286,16 @@
                 static::$connect->setStatus($response);
 
             return $response;
+        }
+
+        /**
+         * This returns the grades of the specified student
+         * @return array|false Array of grades or false if none
+         */
+        public function grades() :array|false{
+            $grade = new Grade(self::$connect, student_id: $this->user_id);
+            $grades = $grade->all();
+
+            return is_array($grades) ? $grades : false;
         }
     }

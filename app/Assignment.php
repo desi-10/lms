@@ -271,7 +271,7 @@
          * @return Instructor|false The instructor details or false
          */
         public function instructor() :Instructor|false{
-            return $this->instructor_id > 0 ? Instructor::find($this->course_id, connection: static::$connect) : false;
+            return $this->instructor_id > 0 ? Instructor::find($this->instructor_id, connection: static::$connect) : false;
         }
 
         /**
@@ -280,5 +280,16 @@
          */
         public function program() :Program|false{
             return $this->program_id > 0 ? Program::find($this->course_id, static::$connect) : false;
+        }
+
+        /**
+         * This returns the grades of the specified quiz
+         * @return array|false Array of grades or false if none
+         */
+        public function grades() :array|false{
+            $grade = new Grade(self::$connect, work_type: "assignment", work_id: $this->id);
+            $grades = $grade->all();
+
+            return is_array($grades) ? $grades : false;
         }
     }

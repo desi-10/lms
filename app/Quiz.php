@@ -300,4 +300,15 @@ use DateTime;
             //return true if there was no failure
             return true;
         }
+
+        /**
+         * This returns the grades of the specified quiz
+         * @return array|false Array of grades or false if none
+         */
+        public function grades() :array|false{
+            $grade = new Grade(self::$connect, work_type: "quiz", work_id: $this->id);
+            $grades = $grade->all();
+
+            return is_array($grades) ? $grades : false;
+        }
     }

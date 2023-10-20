@@ -310,7 +310,11 @@
             if(is_array($search)){
                 //create a new instance of the user
                 $search = static::convertToConstruct($search);
-                $user = new static(static::$connect, ...array_values($search));
+                
+                //change id to user_id
+                self::replace_key($search, "id", "user_id");
+
+                $user = new static(static::$connect, ...$search);
 
                 //set the user role
                 $user->role = $user->create_role($user);
