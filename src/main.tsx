@@ -3,14 +3,14 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
-import UserProvider from "./context/AuthContext.tsx";
+import StudentContext from "./context/StudentContext.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <UserProvider>
+      <StudentContext>
         <App />
-      </UserProvider>
+      </StudentContext>
     </BrowserRouter>
   </React.StrictMode>
 );

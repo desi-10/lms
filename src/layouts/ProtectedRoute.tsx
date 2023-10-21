@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useStudent } from "../context/AuthContext";
+import { useStudent } from "../context/StudentContext";
 
 const ProtectedRoute = () => {
   const { student } = useStudent();
