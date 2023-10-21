@@ -177,6 +177,12 @@ use App\Database;
                     if(!ctype_digit($value) || $value > 1){
                         $response = ucfirst($name)." is supposed to be true/false";
                     }
+                    break;
+                case "file":
+                    if(!is_file($value) && !is_file($_SERVER["DOCUMENT_ROOT"].$value)){
+                        $response = ucfirst($name)." provided is not a file";
+                    }
+                    break;
             }
 
             return $response;

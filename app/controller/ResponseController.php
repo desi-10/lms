@@ -203,6 +203,7 @@
                 "discussion" => ["course","user"],
                 "grade" => ["quiz","assignment", "student"],
                 "message" => ["sender", "recipient"],
+                "coursematerial" => [""],
             ];
 
             return in_array($additional, $allowed_methods[$class_name]);
