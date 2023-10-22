@@ -1,9 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useStudent } from "../context/StudentContext";
 
 const ProtectedRoute = () => {
-  const { student } = useStudent();
-  console.log(student);
+  // const { student } = useStudent();
+  // console.log(student);
 
   const a = false;
 
