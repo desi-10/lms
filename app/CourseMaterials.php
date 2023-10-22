@@ -73,11 +73,11 @@ use App\Traits\Table;
          * @param string|int $material_id This is the id for the course material
          * @return self|bool returns a new course material or false
          */
-        public static function find(string|int $material_id) :self|bool{
+        public static function find(string|int $material_id, Database &$connection = new Database) :self|bool{
             $response = false;
 
             if(empty(static::$connect))
-                $instance = new self;
+                $instance = new self($connection);
 
             $search = self::$connect->fetch("*","coursematerials","id=$material_id");
 
@@ -107,9 +107,12 @@ use App\Traits\Table;
                     $response = $this->validate($details, "insert");
     
                     if($response === true){
-                        // $response = self::$connect->insert($this->class_table, $details);
-                        var_dump($details);
-                        $response = "all is set";
+                        list("db_path" => $db_path) = $this->removeKeys($details["material_path"], ["db_path"], true);
+                        if($response = $this->upload_file(...$details["material_path"])){
+                            //set the base path
+                            $details["material_path"] = $db_path;
+                            $response = self::$connect->insert($this->class_table, $details);
+                        }
                     }
                 }
             }
@@ -123,9 +126,9 @@ use App\Traits\Table;
          * @return bool|string True if found and a string if error
          */
         private function checkFile($name) :bool|string{
-            if(isset($_FILES[$name])){
+            if(file_exists($name) || file_exists($name) || file_exists($_SERVER["DOCUMENT_ROOT"].$name)){
                 return true;
-            }elseif(file_exists($name) || file_exists($name) || file_exists($_SERVER["DOCUMENT_ROOT"].$name)){
+            }elseif(isset($_FILES[$name])){
                 return true;
             }else{
                 return "The material provided is not a file";
@@ -152,7 +155,7 @@ use App\Traits\Table;
                 $final_location = $_SERVER["DOCUMENT_ROOT"].$file_db_path;
 
                 //check if the file already exists
-                if(file_exists($final_location) && $replace){
+                if(file_exists($final_location) && !$replace){
                     $response = "The file '$filename' already exists";
                     self::$connect->setStatus($response, true);
                     return $response;
@@ -161,7 +164,8 @@ use App\Traits\Table;
                 $store_point = [
                     "filename" => $filename,
                     "tmp_location" => $tmp_location,
-                    "final_location" => $final_location
+                    "final_location" => $final_location,
+                    "db_path" => $file_db_path
                 ];
 
                 return true;
@@ -171,7 +175,9 @@ use App\Traits\Table;
         }
 
         private function upload_file(string $tmp_location, $final_location, $filename) :bool{
-            if(move_uploaded_file($tmp_location, $final_location)){
+            if(($_SERVER["REQUEST_METHOD"] == "POST" && move_uploaded_file($tmp_location, $final_location)) ||
+                ($_SERVER["REQUEST_METHOD"] == "PATCH" && rename($tmp_location, $final_location))
+            ){
                 $response = true;
                 self::$connect->setStatus("'$filename' has been uploaded", true);
             }else{
@@ -192,29 +198,48 @@ use App\Traits\Table;
 
             Auth::authorize(["admin", "instructor"]);
 
-            //check if the materials is a file
-            $response = $this->checkFile("material_path");  //check if a new file is uploaded
-            if($response !== true){
-                $response = $this->checkFile($details["material_path1"]);
-                if($response === true){
-                    $mat_path = $this->removeKeys($details, ["material_path1"], true);
-                    $details["material_path"] = $mat_path["material_path"] ?? "";
-                }
+            //replace with old material path if no new material is uploaded
+            if(empty($details["material_path_old"])){
+                return "Old path for the material was not specified";
             }
 
-            if($response === true){
-                //work on the file and provide the path if its valid
+            if(empty($details["material_path"]) && !isset($_FILES["material_path"])){
+                //store the old path into the new path
+                $details["material_path"] = $this->removeKeys($details, ["material_path_old"], true)["material_path_old"];
+            }
+
+            //check if the materials is a file
+            if(($response = $this->checkFile($details["material_path"] ?? "material_path")) === true){
+                //work on the file and provide the path if its valid for new uploads    
                 if(empty($details["material_path"])){
-                    $details["material_path"] = $this->file("material_path", $response, true);
+                    $response = $this->file("material_path", $details["material_path"], true);
                 }
 
                 if($response === true && $this->checkInsert($details, self::$connect)){
-                    $response = $this->validate($details, "insert");
+                    $response = $this->validate($details, "update");
     
                     if($response === true){
-                        // $response = self::$connect->insert($this->class_table, $details);
-                        var_dump($details);
-                        $response = "all is set";
+                        if($current_data = self::find($details["id"])){
+                            $current_data = $current_data->data();
+
+                            //a new upload would suggest that the material path should be an array
+                            if(is_array($details["material_path"])){
+                                list("db_path" => $db_path) = $this->removeKeys($details["material_path"], ["db_path"], true);
+                                if($response = $this->upload_file(...$details["material_path"])){
+                                    //set the base path
+                                    $details["material_path"] = $db_path;
+
+                                    //remove the old path
+                                    $this->removeKeys($details, ["material_path_old"]);
+
+                                    $response = self::$connect->update($current_data, $details, $this->class_table, ["id"]);
+                                }
+                            }else{
+                                $response = self::$connect->update($current_data, $details, $this->class_table, ["id"]);
+                            }
+                        }else{
+                            $response = "Course material was not found";
+                        }
                     }
                 }
             }

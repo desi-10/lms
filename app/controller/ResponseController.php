@@ -213,7 +213,13 @@
             $inputs = file_get_contents("php://input");
             $data = [];
 
-            if(str_contains($inputs, "=")){
+            if(str_contains($inputs,"Content-Disposition")){
+                //get the boundary
+                $boundary = $this->getBoundary();
+                $parts = explode("--$boundary", $inputs);
+                // var_dump($parts);
+                $data = $this->sortMultiForm($parts);
+            }elseif(str_contains($inputs, "=")){
                 $inputs = explode("&",file_get_contents("php://input"));
                 foreach($inputs as $input){
                     $input = explode("=",$input);
@@ -225,5 +231,72 @@
             
 
             return $data;
+        }
+
+        /**
+         * For multipart forms, catch boundaries, especially if it is non POST requests
+         */
+        private function getBoundary() :string{
+            $header = getallheaders();
+            $boundary = $header["Content-Type"];
+            $boundary = explode(";", $boundary)[1];
+            $boundary = explode("=", $boundary)[1];
+
+            return $boundary;
+        }
+
+        /**
+         * This sorts multipart forms into the array format as $array[$key] = $value
+         * @param array $input_array The formated input array
+         * @return array returns an array of key => values
+         */
+        private function sortMultiForm(array $input_array) :array{
+            $response = [];
+
+            if(is_array($input_array)){
+                foreach($input_array as $input){
+                    //ignore empty parts
+                    if(empty($input)){
+                        continue;
+                    }
+
+                    $input = str_replace("Content-Disposition: form-data;", "", $input);
+
+                    if(str_contains($input, "filename")){
+                        //get the file type
+                        preg_match('/Content-Type: (.+)/', $input, $type);
+                        $file_type = str_replace(["\n","\r"],"",$type[1]);
+
+                        //get the input name and file name
+                        preg_match('/name="(.+)"\s/', $input, $matches);
+                        $input_name = str_replace("\"","",explode(";",$matches[1])[0]);
+                        $file_name = str_replace("\"", "", explode("filename=", $matches[1])[1]);
+                        
+                        //process and save the file
+                        $file_data = substr($input, strpos($input, "\r\n\r\n") + 4);
+                        $file_size = file_put_contents($tmp_name = tempnam($_SERVER["TMP"], "tmp"), $file_data);
+
+                        //add this file to the files superglobal array
+                        $_FILES[$input_name] = [
+                            "name"=> $file_name,
+                            "full_path" => $file_name,
+                            "type"=> $file_type,
+                            "error"=> 0,
+                            "size"=> $file_size,
+                            "tmp_name"=> $tmp_name,
+                        ];
+                    }else if(!str_contains($input, "--")){
+                        $input = str_replace(["\r","\n"], "", $input);
+                        
+                        //remove " name= from the string
+                        $input = explode("\"", $input);
+
+                        list($na, $name,$value) = $input;
+                        $response[$name] = $value;
+                    }                    
+                }
+            }
+
+            return $response;
         }
     }
