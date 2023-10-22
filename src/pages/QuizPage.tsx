@@ -1,5 +1,3 @@
-import React from "react";
-
 const answers = [
   {
     id: 1,
