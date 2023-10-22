@@ -180,12 +180,10 @@
             $this->removeKeys($details, ["index_number"]);
 
             //check for level and program then remove
-            $level_program = $this->removeKeys($details, ["level","program_id"], true);
-            $level = $level_program["level"] ?? null;
-            $program_id = $level_program["program_id"] ?? null;
+            list("level" => $level, "program_id" => $program_id) = $this->removeKeys($details, ["level","program_id"], true);
             
             //check the program
-            if($this->checkProgram((int) $program_id)){
+            if((bool) Program::find((int) $program_id)){
                 //check if the level is defined or valid
                 if(empty($level)){
                     $response = "Program level was not provided";
@@ -224,16 +222,6 @@
                     $response = "Program defined was not found";
                 }
                 static::$connect->setStatus($response, true);
-            }
-
-            return $response;
-        }
-
-        private function checkProgram(int $program_id){
-            $response = (bool) Program::find($program_id, connection: static::$connect);
-
-            if(!$response){
-                static::$connect->setStatus("Program '$program_id' does not exist", true);
             }
 
             return $response;
