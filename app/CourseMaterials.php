@@ -298,4 +298,12 @@ use App\Traits\Table;
 
             return true;
         }
+
+        /**
+         * This retrieves the details of the course for this material
+         * @return Course|false The course object or false if not found
+         */
+        public function course() :Course|false{
+            return $this->course_id > 0 ? Course::find($this->course_id, self::$connect) : false;
+        }
     }

@@ -233,4 +233,15 @@
 
             return is_array($response) ? $response : false;
         }
+
+        /**
+         * This returns an array of course materials
+         * @return array|false Array or course materials or false if none
+         */
+        public function materials() :array|false{
+            $material = new CourseMaterials(self::$connect, course_id: $this->id);
+            $response = $material->all();
+
+            return is_array($response) ? $response : false;
+        }
     }

@@ -197,13 +197,13 @@
                 "question" => [],
                 "questionoption" => ["question"],
                 "program" => ["assignments"],
-                "course" => ["instructor", "program", "assignments", "discussions"],
+                "course" => ["instructor", "program", "assignments", "discussions", "materials"],
                 "instructor" => ["courses", "assignments", "discussions", "messages", "message_sent", "message_received"],
                 "assignment" => ["course","instructor","program", "grades"],
                 "discussion" => ["course","user"],
                 "grade" => ["quiz","assignment", "student"],
                 "message" => ["sender", "recipient"],
-                "coursematerial" => [""],
+                "coursematerial" => ["course"],
             ];
 
             return in_array($additional, $allowed_methods[$class_name]);
