@@ -177,6 +177,16 @@ use App\Database;
                     if(!ctype_digit($value) || $value > 1){
                         $response = ucfirst($name)." is supposed to be true/false";
                     }
+                    break;
+                case "file":
+                    //take the temp file and check if its a file
+                    if(is_array($value)){
+                        $value = $value["tmp_location"] ?? null;
+                    }
+                    if(is_null($value) || (!is_null($value) && !is_file($value) && !is_file($_SERVER["DOCUMENT_ROOT"].$value))){
+                        $response = ucfirst($name)." provided is not a file";
+                    }
+                    break;
             }
 
             return $response;
@@ -234,7 +244,7 @@ use App\Database;
          * @param bool $spit_values This is used to return an array of the values of the keys being removed
          * @return null|array doesnt return any value by default, but array if spit_values is true
          */
-        private function removeKeys(array &$array, array $keys, bool $spit_values = false) :null|array{
+        private function removeKeys(array &$array, array $keys, bool $spit_values = false) :?array{
             $response = static::remove_keys($array, $keys, $spit_values);
 
             return $response;
@@ -243,7 +253,7 @@ use App\Database;
         /**
          * Is a static form of the removeKeys function
          */
-        private static function remove_keys(array &$array, array $keys, bool $spit_values = false) :null|array{
+        private static function remove_keys(array &$array, array $keys, bool $spit_values = false) :?array{
             $response = null;
             $reserved_values = [];
 
@@ -252,6 +262,8 @@ use App\Database;
                     //reserve the value and remove the value from the array
                     $reserved_values[$key] = $array[$key];
                     unset($array[$key]);
+                }else{
+                    $reserved_values[$key] = null;
                 }
             }
 

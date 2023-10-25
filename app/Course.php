@@ -208,12 +208,40 @@
          * @return Program|bool returns the program details of the course
          */
         public function program() :Program|bool{
-            $response = false;
+            return $this->program_id > 0 ? 
+                Program::find($this->program_id, connection: static::$connect) : false;
+        }
 
-            if($this->program_id > 0 && $program = Program::find($this->program_id, connection: static::$connect)) {
-                $response = $program;
-            }
+        /**
+         * Grab the full details of the assignments offered in this course
+         * @return array|false returns all assignments or false if none
+         */
+        public function assignments() :array|false{
+            $assignment = new Assignment(self::$connect, course_id: $this->id);
+            $response = $assignment->all();
 
-            return $response;
+            return is_array($response) ? $response : false;
+        }
+
+        /**
+         * Grab all the discussions held in this course
+         * @return array|false returns all discussions in the course
+         */
+        public function discussions() :array|false{
+            $discussion = new Discussion(self::$connect, course_id: $this->id);
+            $response = $discussion->all();
+
+            return is_array($response) ? $response : false;
+        }
+
+        /**
+         * This returns an array of course materials
+         * @return array|false Array or course materials or false if none
+         */
+        public function materials() :array|false{
+            $material = new CourseMaterials(self::$connect, course_id: $this->id);
+            $response = $material->all();
+
+            return is_array($response) ? $response : false;
         }
     }
