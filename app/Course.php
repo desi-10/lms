@@ -27,9 +27,6 @@
             $this->class_table = "courses";
             $this->required_keys = [ "course_name", "course_alias", "instructor_id", "course_code", "program_id" ];
 
-            //check user authentication
-            Auth::authorize(["admin", "instructor"]);
-
             //class attributes
             static::$attributes = [
                 "id" => "int", "course_name" => "string",
