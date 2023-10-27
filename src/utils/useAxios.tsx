@@ -1,13 +1,13 @@
 import axios from "axios";
-import { useUser } from "../context/AuthContext";
-import { saveToLocalStorage } from "./localStorage";
+import { saveStudentToLocalStorage } from "./localStorage";
+import { useStudent } from "../context/StudentContext";
 
 const useAxios = () => {
-  const { user, setUser } = useUser();
+  const { student, setStudent } = useStudent();
 
   const axiosInstance = axios.create({
     baseURL: "http://localhost:8080",
-    headers: { Authorization: `Bearer ${user?.accessToken}` },
+    headers: { Authorization: `Bearer ${student?.token}` },
   });
 
   axiosInstance.interceptors.request.use(async (req) => {
@@ -19,8 +19,8 @@ const useAxios = () => {
       withCredentials: true,
     });
 
-    saveToLocalStorage(data);
-    setUser(data);
+    saveStudentToLocalStorage(data);
+    setStudent(data);
 
     req.headers.Authorization = `Bearer ${data.accessToken}`;
 

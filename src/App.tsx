@@ -11,6 +11,7 @@ import Notes from "./pages/Notes";
 import Chat from "./pages/Chat";
 import CoursePage from "./pages/CoursePage";
 import CourseDetails from "./pages/CourseDetails";
+import QuizPage from "./pages/QuizPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<RootLayout />}>
+            <Route path="quizpage" element={<QuizPage />} />
             <Route element={<SharedLayout />}>
               <Route index element={<Home />} />
               <Route path="video" element={<Video />} />

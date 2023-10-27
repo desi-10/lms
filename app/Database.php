@@ -13,9 +13,14 @@
         private array $logs = [];
         private array $queries = [];
 
+        private string $host = "localhost";
+        private string $username  = "root";
+        private string $password = "";
+        private string $database = "elms";
+
         public function __construct(
-            private string $host = "localhost", private string $username  = "root",  
-            private string $password = "", private string $database = "elms"
+            string $host = "localhost", string $username  = "root",  
+            string $password = "", string $database = "elms"
         ){
             $this->connect($host, $username, $password, $database);
 

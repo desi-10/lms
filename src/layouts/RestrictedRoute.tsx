@@ -1,9 +1,9 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useStudent } from "../context/AuthContext";
+import { useStudent } from "../context/StudentContext";
 
 const RestrictedRoute = () => {
-  const { student } = useStudent();
-  if (student) {
+  const { studentState } = useStudent();
+  if (studentState) {
     return <Navigate to="/home" />;
   }
   return (
