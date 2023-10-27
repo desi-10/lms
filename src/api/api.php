@@ -22,6 +22,13 @@
         "quiz", "question", "questionoptions", "assignment",
         "discussion", "grade", "message", "coursematerials"
     ];
+
+    //this is to help on the live server
+    $classes = [
+        "User","Course","Student","Instructor","Program","Quiz",
+        "Question","QuestionOptions","Assignment","Discussion",
+        "Grade","Message","CourseMaterials"
+    ];
     
     $parts = explode("/",$_SERVER["REQUEST_URI"]);
 
@@ -35,7 +42,7 @@
         exit(1);
     }
 
-    $class = "\App\\".$parts[0];
+    $class = "\App\\".$classes[array_search($parts[0], $accepted)];
     $id = $parts[1] ?? null;
     $additional = $parts[2] ?? null;
 
